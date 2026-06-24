@@ -1,0 +1,96 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]*.[0-9]*.[0-9]*'
+
+jobs:
+  build:
+    name: Build and release
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt pyinstaller
+
+      - name: Run tests
+        run: python -m pytest tests/ -v --tb=short
+
+      - name: Install Tesseract OCR
+        run: choco install tesseract -y --no-progress
+
+      - name: Download Bengali tessdata
+        shell: pwsh
+        run: |
+          $dest = "C:\Program Files\Tesseract-OCR\tessdata\ben.traineddata"
+          Invoke-WebRequest `
+            -Uri "https://github.com/tesseract-ocr/tessdata_fast/raw/main/ben.traineddata" `
+            -OutFile $dest
+
+      - name: Verify Tesseract install
+        shell: pwsh
+        run: |
+          $exe  = "C:\Program Files\Tesseract-OCR\tesseract.exe"
+          $eng  = "C:\Program Files\Tesseract-OCR\tessdata\eng.traineddata"
+          $ben  = "C:\Program Files\Tesseract-OCR\tessdata\ben.traineddata"
+          foreach ($f in $exe, $eng, $ben) {
+            if (-not (Test-Path $f)) { throw "Missing: $f" }
+            Write-Output "OK  $f"
+          }
+
+      - name: Convert icon PNG to ICO
+        run: >-
+          python -c
+          "from PIL import Image;
+          img=Image.open('assets/app_icon.png');
+          img.save('assets/app_icon.ico',format='ICO',sizes=[(256,256),(128,128),(64,64),(32,32),(16,16)])"
+
+      - name: Build exe with PyInstaller
+        shell: pwsh
+        run: |
+          $TESS = "C:\Program Files\Tesseract-OCR"
+          python -m PyInstaller --noconfirm --onefile --console `
+            --name "MarkItDownConverter" `
+            --icon "assets/app_icon.ico" `
+            --add-data "assets;assets" `
+            --add-data "bijoy_unicode.py;." `
+            --add-data "ocr_engine.py;." `
+            --add-data "brand.py;." `
+            "--add-binary=$TESS\tesseract.exe;tesseract" `
+            "--add-data=$TESS\tessdata\eng.traineddata;tesseract/tessdata" `
+            "--add-data=$TESS\tessdata\ben.traineddata;tesseract/tessdata" `
+            --hidden-import customtkinter `
+            --hidden-import tkinterdnd2 `
+            --hidden-import pytesseract `
+            "--hidden-import=PIL._tkinter_finder" `
+            --hidden-import markdown `
+            --collect-all customtkinter `
+            --collect-all tkinterdnd2 `
+            --collect-all magika `
+            --collect-all tkhtmlview `
+            converter.py
+
+      - name: Verify exe
+        shell: pwsh
+        run: |
+          $exe = "dist\MarkItDownConverter.exe"
+          if (-not (Test-Path $exe)) { throw "Build failed: exe not found" }
+          $mb = [Math]::Round((Get-Item $exe).Length / 1MB, 1)
+          Write-Output "Built: MarkItDownConverter.exe ($mb MB)"
+
+      - name: Create release and upload exe
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/MarkItDownConverter.exe
+          generate_release_notes: true
+          fail_on_unmatched_files: true
