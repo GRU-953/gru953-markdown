@@ -13,7 +13,7 @@ echo [2/4] Converting icon PNG to ICO...
 python -c "from PIL import Image; img=Image.open('assets/app_icon.png'); img.save('assets/app_icon.ico', format='ICO', sizes=[(256,256),(128,128),(64,64),(32,32),(16,16)])"
 
 echo [3/4] Running PyInstaller...
-pyinstaller --noconfirm --onefile --windowed ^
+pyinstaller --noconfirm --onefile --console ^
   --name "MarkItDownConverter" ^
   --icon "assets/app_icon.ico" ^
   --add-data "assets;assets" ^
@@ -30,6 +30,8 @@ pyinstaller --noconfirm --onefile --windowed ^
   --hidden-import markdown ^
   --collect-all customtkinter ^
   --collect-all tkinterdnd2 ^
+  --collect-all magika ^
+  --collect-all tkhtmlview ^
   converter.py
 
 echo [4/4] Done.

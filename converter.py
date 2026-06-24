@@ -11,6 +11,18 @@ from pathlib import Path
 from tkinter import filedialog, messagebox
 import tkinter as tk
 
+# In PyInstaller --onefile bundled exe, hide the console window immediately.
+# We use --console (not --windowed) to avoid a bootloader bug on Python 3.14,
+# then suppress the console programmatically so users never see it.
+if hasattr(sys, "_MEIPASS"):
+    try:
+        import ctypes as _ctypes
+        _hwnd = _ctypes.windll.kernel32.GetConsoleWindow()
+        if _hwnd:
+            _ctypes.windll.user32.ShowWindow(_hwnd, 0)   # SW_HIDE = 0
+    except Exception:
+        pass
+
 import customtkinter as ctk
 from PIL import Image as PILImage
 from tkinterdnd2 import DND_FILES, TkinterDnD
@@ -19,11 +31,15 @@ import brand
 from bijoy_unicode import convert_bijoy_to_unicode, detect_script, is_bijoy
 from ocr_engine import LANG_CODES, ocr_image, tesseract_available
 
-try:
-    from markitdown import MarkItDown
-    _mid = MarkItDown()
-except ImportError:
-    _mid = None
+_mid = None
+
+def _init_markitdown():
+    global _mid
+    try:
+        from markitdown import MarkItDown
+        _mid = MarkItDown()
+    except Exception:
+        pass
 
 try:
     import markdown as _md_lib
@@ -107,7 +123,13 @@ class FileRow(ctk.CTkFrame):
 class App(TkinterDnD.Tk):
 
     def __init__(self):
-        super().__init__()
+        try:
+            super().__init__()
+            self._dnd_active = True
+        except Exception:
+            # TkinterDnD native lib failed in bundle; tkinter.Tk.__init__
+            # already ran so the window exists — continue without DnD
+            self._dnd_active = False
         self._files   = []    # list of {"path", "name", "status", "output"}
         self._selected = -1
         self._rows: list = []
@@ -220,14 +242,16 @@ class App(TkinterDnD.Tk):
         dz.grid_columnconfigure(0, weight=1)
         dz.grid_rowconfigure(0, weight=1)
         _dz_lbl = ctk.CTkLabel(
-            dz, text="⊕   Drop files here, or click to add",
+            dz,
+            text="⊕   Drop files here, or click to add" if self._dnd_active else "⊕   Click to add files",
             font=(brand.FONT_UI_EN, 13), text_color=P("text_muted"),
         )
         _dz_lbl.grid(row=0)
         for w in (dz, _dz_lbl):
             w.bind("<Button-1>", lambda _e: self._add_files())
-        dz.drop_target_register(DND_FILES)
-        dz.dnd_bind("<<Drop>>", self._on_drop)
+        if self._dnd_active:
+            dz.drop_target_register(DND_FILES)
+            dz.dnd_bind("<<Drop>>", self._on_drop)
 
         # File list
         self._file_list = ctk.CTkScrollableFrame(
@@ -291,13 +315,18 @@ class App(TkinterDnD.Tk):
         self._raw_text.pack(fill="both", expand=True, padx=4, pady=4)
 
         prev_tab = out_tv.tab("Preview")
+        self._html_preview = False
         if _HAS_HTML:
-            self._preview = _HTMLText(
-                prev_tab, html="<p></p>",
-                background="#FFFFFF", padx=8, pady=8,
-            )
-            self._preview.pack(fill="both", expand=True, padx=4, pady=4)
-        else:
+            try:
+                self._preview = _HTMLText(
+                    prev_tab, html="<p></p>",
+                    background="#FFFFFF", padx=8, pady=8,
+                )
+                self._preview.pack(fill="both", expand=True, padx=4, pady=4)
+                self._html_preview = True
+            except Exception:
+                pass
+        if not self._html_preview:
             self._preview = ctk.CTkTextbox(
                 prev_tab, wrap="word",
                 font=(brand.FONT_UI_EN, 12),
@@ -330,13 +359,13 @@ class App(TkinterDnD.Tk):
         md = self._raw_text.get("1.0", "end").strip()
         if not md:
             return
-        if _HAS_MD and _HAS_HTML:
+        if _HAS_MD and self._html_preview:
             html = _md_lib.markdown(md, extensions=["tables", "fenced_code"])
             self._preview.set_html(
                 f"<html><body style='font-family:sans-serif;padding:8px'>"
                 f"{html}</body></html>"
             )
-        elif not _HAS_HTML:
+        else:
             self._preview.configure(state="normal")
             self._preview.delete("1.0", "end")
             self._preview.insert("1.0", md)
@@ -357,14 +386,17 @@ class App(TkinterDnD.Tk):
         dz.grid_rowconfigure(0, weight=1)
         self._ocr_dz_lbl = ctk.CTkLabel(
             dz,
-            text="⊕   Drop an image here  (PNG · JPG · TIFF · BMP)\nor click to browse",
+            text=("⊕   Drop an image here  (PNG · JPG · TIFF · BMP)\nor click to browse"
+                  if self._dnd_active else
+                  "⊕   Click to browse for an image  (PNG · JPG · TIFF · BMP)"),
             font=(brand.FONT_UI_EN, 13), text_color=P("text_muted"),
         )
         self._ocr_dz_lbl.grid(row=0)
         for w in (dz, self._ocr_dz_lbl):
             w.bind("<Button-1>", lambda _e: self._ocr_pick())
-        dz.drop_target_register(DND_FILES)
-        dz.dnd_bind("<<Drop>>", self._ocr_drop)
+        if self._dnd_active:
+            dz.drop_target_register(DND_FILES)
+            dz.dnd_bind("<<Drop>>", self._ocr_drop)
 
         # Options row
         opts = ctk.CTkFrame(tab, fg_color="transparent")
@@ -579,9 +611,9 @@ class App(TkinterDnD.Tk):
             messagebox.showinfo("No Files", "Add files first.")
             return
         if _mid is None:
-            messagebox.showerror(
-                "MarkItDown missing",
-                "Install MarkItDown:\n    pip install markitdown",
+            messagebox.showinfo(
+                "Please wait",
+                "MarkItDown is still initializing.\nPlease try again in a moment.",
             )
             return
         for f in self._files:
@@ -730,6 +762,9 @@ class App(TkinterDnD.Tk):
 
 def main():
     app = App()
+    # Defer MarkItDown loading until after the window is drawn and event loop is running.
+    # Starting it at module level or before Tk init can deadlock via import lock + GIL.
+    app.after(500, lambda: threading.Thread(target=_init_markitdown, daemon=True).start())
     app.mainloop()
 
 
