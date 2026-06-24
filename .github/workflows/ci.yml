@@ -31,10 +31,11 @@ jobs:
           python -m py_compile ocr_engine.py
           python -m py_compile brand.py
           python -m py_compile utils.py
+          python -m py_compile settings.py
           python -m py_compile converter.py || true
 
       - name: Run tests with coverage
         run: >-
           pytest tests/ -v --tb=short
-          --cov=bijoy_unicode --cov=ocr_engine --cov=utils
+          --cov=bijoy_unicode --cov=ocr_engine --cov=utils --cov=settings
           --cov-report=term-missing

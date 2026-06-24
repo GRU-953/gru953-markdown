@@ -27,6 +27,7 @@ from PIL import Image as PILImage
 from tkinterdnd2 import DND_FILES, TkinterDnD
 
 import brand
+import settings as _settings
 from bijoy_unicode import convert_bijoy_to_unicode, detect_script, is_bijoy
 from ocr_engine import LANG_CODES, ocr_image, tesseract_available
 from utils import parse_dnd_paths
@@ -123,11 +124,14 @@ class App(TkinterDnD.Tk):
             # TkinterDnD native lib failed in bundle; tkinter.Tk.__init__
             # already ran so the window exists — continue without DnD
             self._dnd_active = False
-        self._files   = []    # list of {"path", "name", "status", "output"}
+        self._cfg      = _settings.load()
+        self._files    = []   # list of {"path", "name", "status", "output"}
         self._selected = -1
         self._rows: list = []
         self._ocr_path = None
+        ctk.set_appearance_mode(self._cfg.get("theme", "System"))
         self._build_ui()
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
 
     # ──────────────────────────────────────────────────────── window setup ──
 
@@ -179,9 +183,14 @@ class App(TkinterDnD.Tk):
                      text_color=P("text_muted")).pack(side="left")
 
         # Mode toggle (right-aligned)
+        def _on_mode(v):
+            ctk.set_appearance_mode(v)
+            self._cfg["theme"] = v
+            _settings.save(self._cfg)
+
         self._mode_seg = ctk.CTkSegmentedButton(
             hdr, values=["Light", "System", "Dark"],
-            command=lambda v: ctk.set_appearance_mode(v),
+            command=_on_mode,
             height=30, font=(brand.FONT_UI_EN, 12),
             fg_color=P("surface_high"),
             selected_color=P("primary"),
@@ -190,7 +199,7 @@ class App(TkinterDnD.Tk):
             unselected_hover_color=P("border"),
             text_color=P("text"),
         )
-        self._mode_seg.set("System")
+        self._mode_seg.set(self._cfg.get("theme", "System"))
         self._mode_seg.pack(side="right", padx=(0, 14))
         ctk.CTkLabel(hdr, text="Mode  ",
                      font=(brand.FONT_UI_EN, 12),
@@ -283,9 +292,10 @@ class App(TkinterDnD.Tk):
         # Buttons
         br = ctk.CTkFrame(left, fg_color="transparent")
         br.grid(row=2, column=0, sticky="ew", padx=10, pady=(0, 10))
-        br.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        br.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
         for col, (txt, cmd, fg) in enumerate([
             ("+ Add Files",  self._add_files,   P("primary")),
+            ("Recent ↓",     self._show_recent, P("surface_high")),
             ("Convert All",  self._convert_all, P("primary")),
             ("Save All",     self._save_all_md, P("surface_high")),
             ("Clear",        self._clear_files, P("surface_high")),
@@ -299,7 +309,7 @@ class App(TkinterDnD.Tk):
                 command=cmd,
             )
             btn.grid(row=0, column=col,
-                     padx=(0 if col == 0 else 3, 3 if col < 3 else 0),
+                     padx=(0 if col == 0 else 3, 3 if col < 4 else 0),
                      sticky="ew")
             if txt == "Save All":
                 self._save_all_btn = btn
@@ -426,8 +436,13 @@ class App(TkinterDnD.Tk):
                      font=(brand.FONT_UI_EN, 13),
                      text_color=P("text")).grid(row=0, column=0, padx=(0, 8))
 
+        def _on_ocr_lang(v):
+            self._cfg["ocr_language"] = v
+            _settings.save(self._cfg)
+
         self._ocr_lang = ctk.CTkSegmentedButton(
             opts, values=["English", "বাংলা", "Both"],
+            command=_on_ocr_lang,
             font=(brand.FONT_UI_BN, 13),
             fg_color=P("surface_high"),
             selected_color=P("primary"),
@@ -435,7 +450,7 @@ class App(TkinterDnD.Tk):
             unselected_color=P("surface_high"),
             text_color=P("text"),
         )
-        self._ocr_lang.set("English")
+        self._ocr_lang.set(self._cfg.get("ocr_language", "English"))
         self._ocr_lang.grid(row=0, column=1, padx=(0, 16))
 
         self._bijoy_auto = ctk.BooleanVar(value=True)
@@ -574,6 +589,8 @@ class App(TkinterDnD.Tk):
             "path": str(p), "name": p.name,
             "status": "pending", "output": "",
         })
+        _settings.add_recent(self._cfg, str(p))
+        _settings.save(self._cfg)
         self._refresh_list()
 
     def _refresh_list(self):
@@ -687,9 +704,15 @@ class App(TkinterDnD.Tk):
         if not done_files:
             messagebox.showinfo("Nothing to save", "Convert files first.")
             return
-        folder = filedialog.askdirectory(title="Choose output folder")
+        last = self._cfg.get("last_output_folder") or None
+        folder = filedialog.askdirectory(
+            title="Choose output folder",
+            initialdir=last,
+        )
         if not folder:
             return
+        self._cfg["last_output_folder"] = folder
+        _settings.save(self._cfg)
         out_dir = Path(folder)
         saved = 0
         for f in done_files:
@@ -794,6 +817,70 @@ class App(TkinterDnD.Tk):
         self._bj_out.configure(state="normal")
         self._bj_out.delete("1.0", "end")
         self._bj_out.insert("1.0", result)
+
+    # ────────────────────────────────────────────── Recent files popup ────────
+
+    def _show_recent(self):
+        recent = [p for p in self._cfg.get("recent_files", []) if Path(p).exists()]
+        if not recent:
+            messagebox.showinfo(
+                "Recent Files",
+                "No recent files yet.\nFiles you add will appear here.",
+            )
+            return
+
+        popup = ctk.CTkToplevel(self)
+        popup.title("Recent Files")
+        popup.geometry("460x300")
+        popup.resizable(False, False)
+        popup.transient(self)
+        popup.grab_set()
+        popup.focus_set()
+
+        ctk.CTkLabel(
+            popup, text="Recent Files",
+            font=(brand.FONT_UI_EN, 15, "bold"),
+            text_color=P("text"),
+        ).pack(anchor="w", padx=16, pady=(14, 4))
+
+        sf = ctk.CTkScrollableFrame(popup, fg_color=P("surface"), corner_radius=6)
+        sf.pack(fill="both", expand=True, padx=12, pady=(0, 8))
+        sf.grid_columnconfigure(0, weight=1)
+
+        def _pick(path):
+            self._add_path(path)
+            popup.destroy()
+
+        for i, path in enumerate(recent):
+            ctk.CTkButton(
+                sf, text=f"  {Path(path).name}",
+                anchor="w", height=28,
+                fg_color="transparent",
+                hover_color=P("surface_high"),
+                text_color=P("text"),
+                font=(brand.FONT_UI_EN, 12),
+                command=lambda _p=path: _pick(_p),
+            ).grid(row=i, column=0, sticky="ew", padx=4, pady=(2, 0))
+
+        def _clear_history():
+            self._cfg["recent_files"] = []
+            _settings.save(self._cfg)
+            popup.destroy()
+
+        ctk.CTkButton(
+            popup, text="Clear History", height=28, width=110,
+            fg_color="transparent",
+            hover_color=P("surface_high"),
+            text_color=P("text_muted"),
+            font=(brand.FONT_UI_EN, 11),
+            command=_clear_history,
+        ).pack(side="right", padx=12, pady=(0, 10))
+
+    # ────────────────────────────────────────────────────────── lifecycle ──────
+
+    def _on_close(self):
+        _settings.save(self._cfg)
+        self.destroy()
 
     # ──────────────────────────────────────────────── Shared helpers ──────────
 
