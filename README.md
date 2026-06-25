@@ -4,7 +4,7 @@
 
 [![Release](https://img.shields.io/github/v/release/GRU-953/markitdown-converter?style=flat-square&color=4F46E5)](https://github.com/GRU-953/markitdown-converter/releases/latest)
 [![CI](https://img.shields.io/github/actions/workflow/status/GRU-953/markitdown-converter/ci.yml?branch=master&style=flat-square&label=CI)](https://github.com/GRU-953/markitdown-converter/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen?style=flat-square)](https://github.com/GRU-953/markitdown-converter/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-126%20passing-brightgreen?style=flat-square)](https://github.com/GRU-953/markitdown-converter/actions/workflows/ci.yml)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue?style=flat-square&logo=windows)](https://github.com/GRU-953/markitdown-converter/releases/latest)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 [![Built with](https://img.shields.io/badge/Built%20with-MarkItDown-4F46E5?style=flat-square)](https://github.com/microsoft/markitdown)
@@ -40,10 +40,11 @@ file ─▶ MarkItDown (documents)  ┐
         or Tesseract OCR (images) ┴─▶ auto-detect Bijoy ─▶ Unicode Bengali ─▶ Markdown
 ```
 
-- **Documents** — PDF, Word (.docx), PowerPoint (.pptx), HTML, CSV, JSON, XML, ZIP, audio
-- **Images** — PNG/JPG/TIFF/BMP/WEBP are **automatically OCR'd** (no separate step)
+- **Documents** — PDF, Word (.docx, .doc legacy), Excel (.xlsx, .xls), PowerPoint (.pptx), HTML, CSV, JSON, XML, ZIP, RTF, audio
+- **Images** — PNG/JPG/TIFF/BMP/WEBP/GIF are **automatically OCR'd** (no separate step)
 - **Bengali** — if the result is Bijoy/SutonnyMJ encoded, it is **automatically converted to Unicode**
-- Each file shows which steps ran (MarkItDown · OCR · Bijoy→Unicode)
+- Each file shows which steps ran (e.g. MarkItDown · Bijoy→Unicode, or PDF OCR · Bijoy→Unicode)
+- Files that convert but contain no text receive an amber ⚠ badge instead of a green tick
 
 ### Batch file queue
 
@@ -138,7 +139,7 @@ pip install pytest pytest-cov
 pytest tests/ --cov=bijoy_unicode --cov=ocr_engine --cov=utils --cov=settings --cov=pipeline
 ```
 
-**112 tests · 100% coverage** across all five logic modules. CI runs them on every push
+**126 tests** across all five logic modules. CI runs them on every push
 (Python 3.11 + 3.12) and the release workflow runs them before building the exe.
 
 ---
@@ -158,7 +159,7 @@ markitdown-converter/
 │   ├── css/{themes,styles}.css
 │   └── js/{app.js, vendor/marked.min.js}
 ├── assets/               # fonts (OFL), app icon, brand mark
-├── tests/                # pytest suite — 112 tests, 100% coverage
+├── tests/                # pytest suite — 126 tests
 ├── build_exe.bat         # PyInstaller build script
 └── .github/workflows/    # CI (pytest + coverage) and auto-release (exe on tag)
 ```
@@ -171,7 +172,7 @@ markitdown-converter/
 |---|---|
 | [MarkItDown](https://github.com/microsoft/markitdown) | Microsoft — core document-to-Markdown engine |
 | [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) | Google — bundled as `tesseract.exe` v5.x |
-| [Mukti](https://github.com/Aninda-Howlader/bijoy-unicode) | Aninda S Howlader — Bijoy→Unicode library (ported to Python) |
+| [Mukti](https://github.com/Aninda-Howlader/bijoy-unicode) | Aninda Sundar Howlader — Bijoy→Unicode library (ported to Python) |
 | [pywebview](https://github.com/r0x0r/pywebview) | Roman Sirokov — native webview windows for Python |
 | [marked](https://github.com/markedjs/marked) | Markdown rendering in the preview |
 | [Tabler Icons](https://github.com/tabler/tabler-icons) | MIT-licensed outline icon set |

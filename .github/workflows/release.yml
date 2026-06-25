@@ -99,6 +99,7 @@ jobs:
             --hidden-import xlrd `
             --hidden-import pdfminer `
             --hidden-import olefile `
+            --hidden-import striprtf `
             app.py
 
       - name: Verify exe
