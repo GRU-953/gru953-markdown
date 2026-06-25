@@ -29,13 +29,13 @@ jobs:
         run: |
           python -m py_compile bijoy_unicode.py
           python -m py_compile ocr_engine.py
-          python -m py_compile brand.py
           python -m py_compile utils.py
           python -m py_compile settings.py
-          python -m py_compile converter.py || true
+          python -m py_compile pipeline.py
+          python -m py_compile app.py
 
       - name: Run tests with coverage
         run: >-
           pytest tests/ -v --tb=short
-          --cov=bijoy_unicode --cov=ocr_engine --cov=utils --cov=settings
+          --cov=bijoy_unicode --cov=ocr_engine --cov=utils --cov=settings --cov=pipeline
           --cov-report=term-missing

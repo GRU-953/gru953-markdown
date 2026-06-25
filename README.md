@@ -1,13 +1,17 @@
 # MarkItDown Converter
 
-**A standalone Windows desktop app that converts documents, images, and spreadsheets to clean Markdown — with built-in OCR and Bengali text support.**
+**A standalone Windows desktop app that converts documents, images, and spreadsheets to clean Markdown — with one-click smart OCR and Bengali (Bijoy → Unicode) support.**
 
-[![Release](https://img.shields.io/github/v/release/GRU-953/markitdown-converter?style=flat-square&color=0E8C7A)](https://github.com/GRU-953/markitdown-converter/releases/latest)
+[![Release](https://img.shields.io/github/v/release/GRU-953/markitdown-converter?style=flat-square&color=4F46E5)](https://github.com/GRU-953/markitdown-converter/releases/latest)
 [![CI](https://img.shields.io/github/actions/workflow/status/GRU-953/markitdown-converter/ci.yml?branch=master&style=flat-square&label=CI)](https://github.com/GRU-953/markitdown-converter/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen?style=flat-square)](https://github.com/GRU-953/markitdown-converter/actions/workflows/ci.yml)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue?style=flat-square&logo=windows)](https://github.com/GRU-953/markitdown-converter/releases/latest)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
-[![Built with](https://img.shields.io/badge/Built%20with-MarkItDown-0E8C7A?style=flat-square)](https://github.com/microsoft/markitdown)
+[![Built with](https://img.shields.io/badge/Built%20with-MarkItDown-4F46E5?style=flat-square)](https://github.com/microsoft/markitdown)
+
+> **v4** is a ground-up redesign: a modern web-based UI (pywebview + WebView2), three
+> selectable colour themes, a unified "one button" conversion pipeline, a live Markdown
+> editor/preview, batch progress, conversion history, and flexible export.
 
 ---
 
@@ -20,62 +24,71 @@ No Python installation. No setup wizard. Just download and run.
 | | |
 |---|---|
 | **OS** | Windows 10 / 11 (64-bit) |
-| **Size** | ~91 MB (self-extracting, all dependencies bundled) |
+| **Runtime** | Microsoft Edge WebView2 (ships with Windows 11; auto-installed on Win 10) |
 | **First launch** | Allow 5–10 seconds — the bundle extracts itself once |
 
 ---
 
 ## Features
 
-### Convert Files
+### One-click smart conversion
 
-Convert any of the following to clean Markdown in one click:
+A single **Convert** button transparently chains everything a file needs:
 
-| Format | Extensions |
-|---|---|
-| Documents | PDF, Word (.docx), PowerPoint (.pptx), HTML, HTM |
-| Spreadsheets | Excel (.xlsx), CSV |
-| Data | JSON, XML |
-| Images | PNG, JPG/JPEG, GIF, BMP, TIFF |
-| Archives | ZIP (contents recursively converted) |
-| Audio | WAV, MP3 (transcription via MarkItDown) |
+```
+file ─▶ MarkItDown (documents)  ┐
+        or Tesseract OCR (images) ┴─▶ auto-detect Bijoy ─▶ Unicode Bengali ─▶ Markdown
+```
 
-**Workflow:**
-1. Drag files into the drop zone — or click **+ Add Files** (supports batch selection)
-2. Click **Convert All** — each row shows a live ✓ / ✗ status
-3. Select any file to see its Markdown in the **Raw MD** tab or rendered in **Preview**
-4. **Copy** to clipboard, **Save .md** for a single file, or **Save All** to write every converted file to a folder in one step
+- **Documents** — PDF, Word (.docx), PowerPoint (.pptx), HTML, CSV, JSON, XML, ZIP, audio
+- **Images** — PNG/JPG/TIFF/BMP/WEBP are **automatically OCR'd** (no separate step)
+- **Bengali** — if the result is Bijoy/SutonnyMJ encoded, it is **automatically converted to Unicode**
+- Each file shows which steps ran (MarkItDown · OCR · Bijoy→Unicode)
 
-**Keyboard shortcuts:** `Ctrl + O` to add files · `Ctrl + Enter` to convert
+### Batch file queue
 
----
+- Drag-and-drop or browse; **drag to reorder**
+- Per-file status with live progress and a **Retry failed** action
+- Convert all in one click
 
-### OCR — English & Bengali
+### Markdown editor + live preview
 
-Extract text from images using Tesseract OCR v5.5.0, bundled with the app.
+- Toggle between a rendered **Preview** and an editable **Markdown** view
+- Bengali text is rendered with proper Unicode fonts
+- **Copy**, **Export** (`.md` / `.html` / `.txt`), or **Export all** combined into one document
 
-- Supports **English**, **বাংলা**, or **both at once**
-- Drop an image or click to browse
-- Tick **Auto-convert Bijoy → Unicode** to automatically fix Bijoy-encoded OCR output
-- Copy or save the extracted text
+### Three colour themes
 
----
+Indigo Nocturne · Violet Bloom · Slate & Amber — each in **light and dark** mode, switchable
+live in Settings. Your choice is remembered.
 
-### Bijoy → Unicode
+### Dedicated OCR & Bijoy tools
 
-Convert legacy SutonnyMJ / Bijoy-encoded Bengali text to proper Unicode (UTF-8).
+Standalone **OCR** (English / বাংলা / Both) and **Bijoy → Unicode** views remain available for
+direct text work, with automatic script detection.
 
-- Paste text — the script (Bijoy / Unicode Bengali / Latin) is **detected automatically**
-- Click **Convert ↓** — Unicode output appears instantly
-- Works on clipboard content, scanned documents, or any Bijoy-encoded source
+### Conversion history
+
+Every conversion is logged with a timestamp and the steps applied — browse or clear it anytime.
 
 ---
 
-### Interface
+## Architecture
 
-- **Dark / Light / System** mode toggle in the header
-- Status bar with live feedback: initialization state, per-file conversion progress, copy and save confirmations
-- GRU-953 brand — teal palette, Figtree · Hind Siliguri · Tiro Bangla fonts (all OFL licensed)
+v4 separates a thin Python backend from an HTML/CSS/JS frontend rendered in a native
+WebView2 window via [pywebview](https://pywebview.flowrl.com/):
+
+```
+┌─────────────────────────────┐     window.pywebview.api      ┌──────────────────────┐
+│  Frontend (web/)            │ ◀───────────────────────────▶ │  Python backend       │
+│  index.html · CSS · app.js  │     JSON bridge (js_api)      │  app.py (Api) →       │
+│  marked.js · Tabler icons   │                               │  pipeline · ocr ·     │
+└─────────────────────────────┘                               │  bijoy · settings     │
+                                                              └──────────────────────┘
+```
+
+The pure-Python logic modules (`pipeline`, `bijoy_unicode`, `ocr_engine`, `settings`,
+`utils`) carry **100% test coverage** and have no GUI dependencies.
 
 ---
 
@@ -85,8 +98,9 @@ Convert legacy SutonnyMJ / Bijoy-encoded Bengali text to proper Unicode (UTF-8).
 
 | Tool | Version | Notes |
 |---|---|---|
-| Python | 3.11 – 3.13 | Python 3.14 requires `--console` flag (see below) |
-| [Tesseract OCR v5](https://github.com/UB-Mannheim/tesseract/wiki) | 5.x | Install to `C:\Program Files\Tesseract-OCR\`; add `eng.traineddata` + `ben.traineddata` |
+| Python | 3.11 – 3.13 | Python 3.14 works but requires `--console` (see notes) |
+| [Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/) | evergreen | Pre-installed on Windows 11 |
+| [Tesseract OCR v5](https://github.com/UB-Mannheim/tesseract/wiki) | 5.x | Install to `C:\Program Files\Tesseract-OCR\`; add `eng` + `ben` traineddata |
 | PyInstaller | 6.x | `pip install pyinstaller` |
 
 ### Steps
@@ -97,7 +111,7 @@ cd markitdown-converter
 pip install -r requirements.txt
 
 # Run directly (development)
-python converter.py
+python app.py
 
 # Build standalone .exe
 build_exe.bat
@@ -107,9 +121,25 @@ The compiled exe is written to `dist\MarkItDownConverter.exe`.
 
 ### PyInstaller notes
 
-- Use `--console` (not `--windowed`) — the `runw.exe` bootloader hangs silently on Python 3.14 with `--onefile`. The console window is hidden programmatically at startup.
-- `--collect-all magika` is required — MarkItDown depends on magika ML models that PyInstaller won't auto-discover.
-- `--collect-all tkhtmlview` is required — without it, the HTML preview widget attempts a runtime download of `tkhtml3`, blocking the UI.
+- `--collect-all webview` is required — it bundles pywebview's JS bridge and the
+  WebView2 (`edgechromium`) backend assemblies loaded via `pythonnet`/`clr_loader`.
+- `--add-data "web;web"` ships the HTML/CSS/JS frontend (including the bundled
+  `marked.min.js`, so Markdown preview works fully offline).
+- `--collect-all magika` is required — MarkItDown depends on magika ML models.
+- Use `--console` (not `--windowed`) — the `runw.exe` bootloader hangs silently on
+  Python 3.14 with `--onefile`. The console window is hidden programmatically at startup.
+
+---
+
+## Tests
+
+```bash
+pip install pytest pytest-cov
+pytest tests/ --cov=bijoy_unicode --cov=ocr_engine --cov=utils --cov=settings --cov=pipeline
+```
+
+**112 tests · 100% coverage** across all five logic modules. CI runs them on every push
+(Python 3.11 + 3.12) and the release workflow runs them before building the exe.
 
 ---
 
@@ -117,18 +147,19 @@ The compiled exe is written to `dist\MarkItDownConverter.exe`.
 
 ```
 markitdown-converter/
-├── converter.py          # Main app — CustomTkinter UI, all tab logic
-├── brand.py              # GRU-953 colour tokens, font loader, asset paths
-├── bijoy_unicode.py      # Bijoy / SutonnyMJ → Unicode conversion (Mukti port)
+├── app.py                # pywebview entry — window + JS↔Python Api bridge
+├── pipeline.py           # unified convert: MarkItDown → OCR → Bijoy
+├── bijoy_unicode.py      # Bijoy / SutonnyMJ → Unicode (Mukti port)
 ├── ocr_engine.py         # Tesseract wrapper — bundle-aware path resolution
-├── utils.py              # Shared utilities (DnD path parsing)
+├── settings.py           # persistent JSON config (theme, palette, history…)
+├── utils.py              # shared helpers
+├── web/                  # frontend
+│   ├── index.html
+│   ├── css/{themes,styles}.css
+│   └── js/{app.js, vendor/marked.min.js}
+├── assets/               # fonts (OFL), app icon, brand mark
+├── tests/                # pytest suite — 112 tests, 100% coverage
 ├── build_exe.bat         # PyInstaller build script
-├── requirements.txt      # Python dependencies
-├── assets/               # Fonts (OFL), app icon, brand mark
-├── tests/                # pytest suite — 68 tests, 100% coverage
-│   ├── test_bijoy.py
-│   ├── test_ocr_engine.py
-│   └── test_utils.py
 └── .github/workflows/    # CI (pytest + coverage) and auto-release (exe on tag)
 ```
 
@@ -138,12 +169,13 @@ markitdown-converter/
 
 | Component | Credit |
 |---|---|
-| [MarkItDown](https://github.com/microsoft/markitdown) | Microsoft — core document-to-Markdown conversion engine |
-| [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) | Google — bundled as `tesseract.exe` v5.5.0 |
-| [Mukti](https://github.com/Aninda-Howlader/bijoy-unicode) | Aninda S Howlader — Bijoy→Unicode JS library (ported to Python) |
-| [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) | Tom Schimansky — modern tkinter UI framework |
-| [TkinterDnD2](https://github.com/pmgagne/tkinterdnd2) | Drag-and-drop support for tkinter |
-| Figtree · Hind Siliguri · Tiro Bangla | OFL licensed fonts |
+| [MarkItDown](https://github.com/microsoft/markitdown) | Microsoft — core document-to-Markdown engine |
+| [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) | Google — bundled as `tesseract.exe` v5.x |
+| [Mukti](https://github.com/Aninda-Howlader/bijoy-unicode) | Aninda S Howlader — Bijoy→Unicode library (ported to Python) |
+| [pywebview](https://github.com/r0x0r/pywebview) | Roman Sirokov — native webview windows for Python |
+| [marked](https://github.com/markedjs/marked) | Markdown rendering in the preview |
+| [Tabler Icons](https://github.com/tabler/tabler-icons) | MIT-licensed outline icon set |
+| Figtree · Hind Siliguri · Tiro Bangla | OFL-licensed fonts |
 
 ---
 

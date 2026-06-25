@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="dark" data-palette="indigo">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MarkItDown Converter</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.2.0/tabler-icons.min.css">
+  <style>
+    @font-face { font-family: "Figtree"; src: url("../assets/Figtree.ttf"); font-display: swap; }
+    @font-face { font-family: "Hind Siliguri"; src: url("../assets/HindSiliguri-Regular.ttf"); font-weight: 400; }
+    @font-face { font-family: "Hind Siliguri"; src: url("../assets/HindSiliguri-SemiBold.ttf"); font-weight: 600; }
+    @font-face { font-family: "Tiro Bangla"; src: url("../assets/TiroBangla.ttf"); }
+  </style>
+  <link rel="stylesheet" href="css/themes.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="brand-mark">M</div>
+      <button class="nav-btn active" data-view="convert" title="Convert"><i class="ti ti-transform"></i><span>Convert</span></button>
+      <button class="nav-btn" data-view="ocr" title="OCR"><i class="ti ti-scan"></i><span>OCR</span></button>
+      <button class="nav-btn" data-view="bijoy" title="Bijoy"><i class="ti ti-language"></i><span>Bijoy</span></button>
+      <button class="nav-btn" data-view="history" title="History"><i class="ti ti-history"></i><span>History</span></button>
+      <div class="nav-spacer"></div>
+      <button class="nav-btn" data-view="settings" title="Settings"><i class="ti ti-settings"></i><span>Settings</span></button>
+    </nav>
+
+    <div class="main">
+      <header class="topbar">
+        <h1 id="view-title">Convert</h1>
+        <span class="sub" id="view-sub">Documents, images & spreadsheets → Markdown</span>
+        <div class="topbar-right">
+          <div class="seg" id="mode-seg">
+            <button data-mode="Light">Light</button>
+            <button data-mode="System">Auto</button>
+            <button data-mode="Dark">Dark</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="content">
+
+        <!-- ── Convert view ──────────────────────────────────────────────── -->
+        <section class="view active" id="view-convert">
+          <div class="convert-grid">
+            <div class="panel">
+              <div class="panel-head">
+                <h2>Files</h2><span class="count" id="file-count">0</span>
+                <div class="head-actions">
+                  <button class="btn ghost icon" id="retry-btn" title="Retry failed" disabled><i class="ti ti-refresh"></i></button>
+                </div>
+              </div>
+              <div class="dropzone" id="dropzone">
+                <i class="ti ti-cloud-upload"></i>
+                Drop files here, or click to browse
+                <div class="small">PDF · DOCX · XLSX · PPTX · images · CSV · JSON · ZIP</div>
+              </div>
+              <div class="panel-body" id="file-list">
+                <div class="empty" id="file-empty"><i class="ti ti-files-off"></i>No files yet</div>
+              </div>
+              <div class="panel-foot">
+                <button class="btn primary" id="convert-btn"><i class="ti ti-bolt"></i>Convert all</button>
+                <button class="btn" id="clear-btn"><i class="ti ti-trash"></i></button>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <h2 id="out-name">Output</h2>
+                <div class="head-actions">
+                  <div class="seg output-tabs" id="out-tabs">
+                    <button data-tab="preview" class="active">Preview</button>
+                    <button data-tab="edit">Edit</button>
+                  </div>
+                </div>
+              </div>
+              <div class="output-body">
+                <textarea class="editor" id="editor" placeholder="Converted Markdown appears here…" style="display:none;"></textarea>
+                <div class="preview" id="preview"></div>
+              </div>
+              <div class="panel-foot">
+                <button class="btn" id="copy-btn"><i class="ti ti-copy"></i>Copy</button>
+                <button class="btn" id="export-btn"><i class="ti ti-download"></i>Export</button>
+                <button class="btn" id="export-all-btn"><i class="ti ti-stack-2"></i>Export all</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── OCR view ──────────────────────────────────────────────────── -->
+        <section class="view" id="view-ocr">
+          <div class="stack">
+            <div class="dropzone" id="ocr-drop" style="margin:0;">
+              <i class="ti ti-photo"></i>Drop an image, or click to browse
+              <div class="small" id="ocr-file">PNG · JPG · TIFF · BMP · WEBP</div>
+            </div>
+            <div class="row">
+              <span class="label">Language</span>
+              <div class="seg" id="ocr-lang">
+                <button data-lang="English" class="active">English</button>
+                <button data-lang="বাংলা">বাংলা</button>
+                <button data-lang="Both">Both</button>
+              </div>
+              <label class="checkbox"><input type="checkbox" id="ocr-bijoy" checked> Auto Bijoy→Unicode</label>
+              <button class="btn primary" id="ocr-run" style="margin-left:auto;"><i class="ti ti-scan"></i>Extract text</button>
+            </div>
+            <textarea class="field" id="ocr-out" placeholder="Extracted text appears here…"></textarea>
+            <div class="row">
+              <button class="btn" id="ocr-copy"><i class="ti ti-copy"></i>Copy</button>
+              <button class="btn" id="ocr-export"><i class="ti ti-download"></i>Save .txt</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── Bijoy view ────────────────────────────────────────────────── -->
+        <section class="view" id="view-bijoy">
+          <div class="stack">
+            <div class="row"><span class="label">Input — paste Bijoy / SutonnyMJ text</span>
+              <span class="detect-pill" id="bj-detect" style="margin-left:auto;">Type to auto-detect</span></div>
+            <textarea class="field" id="bj-in" placeholder="Avwg evsjvq wjwL…"></textarea>
+            <div class="row">
+              <button class="btn primary" id="bj-run"><i class="ti ti-arrow-down"></i>Convert to Unicode</button>
+            </div>
+            <span class="label">Output — Unicode Bengali</span>
+            <textarea class="field" id="bj-out" placeholder="আউটপুট…" readonly></textarea>
+            <div class="row">
+              <button class="btn" id="bj-copy"><i class="ti ti-copy"></i>Copy</button>
+              <button class="btn" id="bj-export"><i class="ti ti-download"></i>Save .txt</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── History view ──────────────────────────────────────────────── -->
+        <section class="view" id="view-history">
+          <div class="row" style="margin-bottom:14px;">
+            <span class="label" id="hist-count">No conversions yet</span>
+            <button class="btn ghost" id="hist-clear" style="margin-left:auto;"><i class="ti ti-trash"></i>Clear history</button>
+          </div>
+          <div id="hist-list"></div>
+        </section>
+
+        <!-- ── Settings view ─────────────────────────────────────────────── -->
+        <section class="view" id="view-settings">
+          <div class="settings-wrap">
+            <div class="setting">
+              <h3>Colour theme</h3>
+              <p>Choose an accent palette. Each adapts to light and dark mode.</p>
+              <div class="palette-grid" id="palette-grid">
+                <div class="palette-card" data-palette="indigo">
+                  <div class="swatches"><div class="sw" style="background:#4F46E5"></div><div class="sw" style="background:#06B6D4"></div><div class="sw" style="background:#1E1B4B"></div></div>
+                  <div class="pname">Indigo Nocturne</div><div class="ptag">cool · premium</div>
+                </div>
+                <div class="palette-card" data-palette="violet">
+                  <div class="swatches"><div class="sw" style="background:#7C3AED"></div><div class="sw" style="background:#EC4899"></div><div class="sw" style="background:#2E1065"></div></div>
+                  <div class="pname">Violet Bloom</div><div class="ptag">creative · vivid</div>
+                </div>
+                <div class="palette-card" data-palette="slate">
+                  <div class="swatches"><div class="sw" style="background:#1E293B"></div><div class="sw" style="background:#F59E0B"></div><div class="sw" style="background:#475569"></div></div>
+                  <div class="pname">Slate &amp; Amber</div><div class="ptag">warm · editorial</div>
+                </div>
+              </div>
+            </div>
+            <div class="setting">
+              <h3>Smart conversion</h3>
+              <p>Applied automatically inside the single Convert step.</p>
+              <div class="row" style="gap:22px;">
+                <label class="checkbox"><input type="checkbox" id="set-auto-ocr"> Auto-OCR image files</label>
+                <label class="checkbox"><input type="checkbox" id="set-auto-bijoy"> Auto-convert Bijoy → Unicode</label>
+              </div>
+            </div>
+            <div class="setting">
+              <h3>Default OCR language</h3>
+              <p>Used by the unified Convert pipeline for images.</p>
+              <div class="seg" id="set-ocr-lang">
+                <button data-lang="English">English</button>
+                <button data-lang="বাংলা">বাংলা</button>
+                <button data-lang="Both">Both</button>
+              </div>
+            </div>
+            <div class="setting">
+              <h3>About</h3>
+              <p>MarkItDown Converter v4 · GRU-953 · powered by Microsoft MarkItDown &amp; Tesseract OCR.</p>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-wrap" id="toasts"></div>
+
+  <script src="js/vendor/marked.min.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

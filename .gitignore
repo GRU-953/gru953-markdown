@@ -7,3 +7,7 @@ build/
 dist/
 assets/app_icon.ico
 .pytest_cache/
+.coverage
+htmlcov/
+launch_*.txt
+launch_*.png

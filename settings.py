@@ -9,12 +9,17 @@ from pathlib import Path
 
 _FILE = Path.home() / ".markitdown_converter.json"
 _MAX_RECENT = 10
+_MAX_HISTORY = 100
 
 _DEFAULTS: dict = {
-    "theme": "System",
+    "theme": "System",          # Light | Dark | System
+    "palette": "indigo",        # indigo | violet | slate
     "ocr_language": "English",
+    "auto_ocr": True,
+    "auto_bijoy": True,
     "last_output_folder": "",
     "recent_files": [],
+    "history": [],              # list of {name, path, ts, steps, ok}
 }
 
 
@@ -27,6 +32,10 @@ def load() -> dict:
             p for p in merged.get("recent_files", [])
             if isinstance(p, str)
         ][:_MAX_RECENT]
+        merged["history"] = [
+            h for h in merged.get("history", [])
+            if isinstance(h, dict)
+        ][:_MAX_HISTORY]
         return merged
     except Exception:
         return dict(_DEFAULTS)
@@ -48,3 +57,10 @@ def add_recent(settings: dict, path: str) -> None:
     recent = [p for p in settings.get("recent_files", []) if p != path]
     recent.insert(0, path)
     settings["recent_files"] = recent[:_MAX_RECENT]
+
+
+def add_history(settings: dict, entry: dict) -> None:
+    """Prepend a conversion-history *entry*, capping at _MAX_HISTORY."""
+    hist = settings.get("history", [])
+    hist.insert(0, entry)
+    settings["history"] = hist[:_MAX_HISTORY]

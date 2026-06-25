@@ -62,25 +62,19 @@ jobs:
           python -m PyInstaller --noconfirm --onefile --console `
             --name "MarkItDownConverter" `
             --icon "assets/app_icon.ico" `
+            --add-data "web;web" `
             --add-data "assets;assets" `
-            --add-data "bijoy_unicode.py;." `
-            --add-data "ocr_engine.py;." `
-            --add-data "brand.py;." `
-            --add-data "utils.py;." `
-            --add-data "settings.py;." `
             "--add-binary=$TESS\tesseract.exe;tesseract" `
             "--add-data=$TESS\tessdata\eng.traineddata;tesseract/tessdata" `
             "--add-data=$TESS\tessdata\ben.traineddata;tesseract/tessdata" `
-            --hidden-import customtkinter `
-            --hidden-import tkinterdnd2 `
-            --hidden-import pytesseract `
-            "--hidden-import=PIL._tkinter_finder" `
-            --hidden-import markdown `
-            --collect-all customtkinter `
-            --collect-all tkinterdnd2 `
+            --collect-all webview `
+            --collect-all clr_loader `
             --collect-all magika `
-            --collect-all tkhtmlview `
-            converter.py
+            --hidden-import clr `
+            --hidden-import bottle `
+            --hidden-import markdown `
+            --hidden-import pytesseract `
+            app.py
 
       - name: Verify exe
         shell: pwsh

@@ -125,3 +125,55 @@ class TestAddRecent:
         s = {"recent_files": []}
         settings.add_recent(s, "/a.pdf")
         assert s["recent_files"] == ["/a.pdf"]
+
+
+# ── add_history ─────────────────────────────────────────────────────────────
+
+class TestAddHistory:
+    def test_prepends_entry(self):
+        s = {"history": [{"name": "old"}]}
+        settings.add_history(s, {"name": "new"})
+        assert s["history"][0]["name"] == "new"
+        assert len(s["history"]) == 2
+
+    def test_creates_key_if_missing(self):
+        s = {}
+        settings.add_history(s, {"name": "a"})
+        assert s["history"] == [{"name": "a"}]
+
+    def test_caps_at_max_history(self):
+        entries = [{"name": f"f{i}"} for i in range(settings._MAX_HISTORY)]
+        s = {"history": entries}
+        settings.add_history(s, {"name": "newest"})
+        assert len(s["history"]) == settings._MAX_HISTORY
+        assert s["history"][0]["name"] == "newest"
+
+
+# ── new default keys ────────────────────────────────────────────────────────
+
+class TestNewDefaults:
+    def test_palette_default(self, tmp_path, monkeypatch):
+        _patch_file(tmp_path, monkeypatch)
+        assert settings.load()["palette"] == "indigo"
+
+    def test_auto_flags_default_true(self, tmp_path, monkeypatch):
+        _patch_file(tmp_path, monkeypatch)
+        s = settings.load()
+        assert s["auto_ocr"] is True
+        assert s["auto_bijoy"] is True
+
+    def test_history_default_empty(self, tmp_path, monkeypatch):
+        _patch_file(tmp_path, monkeypatch)
+        assert settings.load()["history"] == []
+
+    def test_history_capped_on_load(self, tmp_path, monkeypatch):
+        f = _patch_file(tmp_path, monkeypatch)
+        big = [{"name": f"f{i}"} for i in range(200)]
+        f.write_text(json.dumps({"history": big}), encoding="utf-8")
+        assert len(settings.load()["history"]) == settings._MAX_HISTORY
+
+    def test_non_dict_history_entries_filtered(self, tmp_path, monkeypatch):
+        f = _patch_file(tmp_path, monkeypatch)
+        f.write_text(json.dumps({"history": [{"name": "ok"}, "junk", 5]}),
+                     encoding="utf-8")
+        assert settings.load()["history"] == [{"name": "ok"}]

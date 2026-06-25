@@ -1,7 +1,5 @@
 markitdown
-customtkinter
-tkinterdnd2
+pywebview
 pytesseract
 Pillow
 markdown
-tkhtmlview
