@@ -26,6 +26,19 @@ All extensions above are listed in `pipeline.UNSUPPORTED_EXTS` and raise a
 | Email archives | .pst, .ost | Requires Outlook/MAPI; out of scope |
 | E-books | .epub | Depends on MarkItDown epub extra; not bundled — convert to PDF first |
 
+## Known large-file limitations
+
+These formats are supported but may hit limits on very large files:
+
+| Scenario | Behaviour | Workaround |
+|---|---|---|
+| ZIP archive > ~50 MB | `MemoryError` — MarkItDown expands the entire archive into memory; raises a friendly "insufficient memory" error in the UI | Split the archive into smaller zips or extract the relevant files first |
+| ZIP archive 15–50 MB | Conversion succeeds but may take 1–3 minutes | Convert in the app (no timeout); the corpus audit may report TIMEOUT |
+| PDF scan-only > ~30 MB | Text-layer check takes 30–120 s to confirm there is no text | Enable OCR for scanned PDFs; large scans are slow even to detect as empty |
+| PPTX with many embedded images | File size up to ~280 MB; text extraction is fast (MarkItDown reads slide XML, not images) | No action needed — works fine |
+
+All these are converted by the app with no hard limit. The `full_corpus_audit.py` audit may report TIMEOUT for large ZIPs or PDFs due to its per-file time limit.
+
 ## Out of scope (intentional)
 
 - Audio transcription beyond MarkItDown's built-in speech-to-text stub (requires API key)

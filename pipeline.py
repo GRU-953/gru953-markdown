@@ -42,6 +42,8 @@ try:
     _STRIPRTF_AVAILABLE = True
 except ImportError:
     _STRIPRTF_AVAILABLE = False
+    def _rtf_to_text(rtf_text: str) -> str:  # noqa: F811
+        return ""
 
 _mid = None
 
@@ -276,8 +278,14 @@ def convert_file(
         steps.append("rtf")
     else:
         md = markitdown or _get_markitdown()
-        result = md.convert(str(p))
-        text = result.text_content or ""
+        try:
+            result = md.convert(str(p))
+            text = result.text_content or ""
+        except MemoryError:
+            raise ValueError(
+                "File is too large to convert: insufficient memory. "
+                "Try closing other applications or converting a smaller file."
+            )
         steps.append("markitdown")
 
     if auto_bijoy and text and is_bijoy_func(text):

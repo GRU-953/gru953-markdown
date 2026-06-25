@@ -4,7 +4,7 @@
 
 [![Release](https://img.shields.io/github/v/release/GRU-953/markitdown-converter?style=flat-square&color=4F46E5)](https://github.com/GRU-953/markitdown-converter/releases/latest)
 [![CI](https://img.shields.io/github/actions/workflow/status/GRU-953/markitdown-converter/ci.yml?branch=master&style=flat-square&label=CI)](https://github.com/GRU-953/markitdown-converter/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-126%20passing-brightgreen?style=flat-square)](https://github.com/GRU-953/markitdown-converter/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-131%20passing-brightgreen?style=flat-square)](https://github.com/GRU-953/markitdown-converter/actions/workflows/ci.yml)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue?style=flat-square&logo=windows)](https://github.com/GRU-953/markitdown-converter/releases/latest)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 [![Built with](https://img.shields.io/badge/Built%20with-MarkItDown-4F46E5?style=flat-square)](https://github.com/microsoft/markitdown)
@@ -139,7 +139,7 @@ pip install pytest pytest-cov
 pytest tests/ --cov=bijoy_unicode --cov=ocr_engine --cov=utils --cov=settings --cov=pipeline
 ```
 
-**126 tests** across all five logic modules. CI runs them on every push
+**131 tests** across all five logic modules. CI runs them on every push
 (Python 3.11 + 3.12) and the release workflow runs them before building the exe.
 
 ---
@@ -159,7 +159,7 @@ markitdown-converter/
 │   ├── css/{themes,styles}.css
 │   └── js/{app.js, vendor/marked.min.js}
 ├── assets/               # fonts (OFL), app icon, brand mark
-├── tests/                # pytest suite — 126 tests
+├── tests/                # pytest suite — 131 tests
 ├── build_exe.bat         # PyInstaller build script
 └── .github/workflows/    # CI (pytest + coverage) and auto-release (exe on tag)
 ```

@@ -11,7 +11,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pipeline
-from pipeline import convert_file, is_image, is_legacy_doc, is_unsupported
+from pipeline import convert_file, is_image, is_legacy_doc, is_unsupported, is_rtf
 
 
 # ── fakes ───────────────────────────────────────────────────────────────────
@@ -242,6 +242,50 @@ class TestOcrEmpty:
 
 
 # ── image_ocr_disabled (standalone) ──────────────────────────────────────────
+
+
+# ── RTF extraction ────────────────────────────────────────────────────────────
+
+class TestRtf:
+    def test_is_rtf_true(self):
+        assert is_rtf("document.rtf") is True
+        assert is_rtf("REPORT.RTF") is True
+
+    def test_is_rtf_false(self):
+        assert is_rtf("document.docx") is False
+        assert is_rtf("document.doc") is False
+
+    def test_rtf_step_via_markitdown_fallback(self, tmp_path, monkeypatch):
+        """When striprtf is unavailable, RTF falls through to MarkItDown; step='rtf'."""
+        f = tmp_path / "report.rtf"
+        f.write_bytes(b"dummy")
+        monkeypatch.setattr(pipeline, "_STRIPRTF_AVAILABLE", False)
+        md = FakeMarkItDown("rtf content here")
+        out = convert_file(str(f), markitdown=md)
+        assert "rtf" in out["steps"]
+        assert out["text"] == "rtf content here"
+
+    def test_rtf_step_via_striprtf(self, tmp_path, monkeypatch):
+        """When striprtf is available and returns text, 'rtf' step appears."""
+        f = tmp_path / "report.rtf"
+        f.write_bytes(b"dummy")
+        monkeypatch.setattr(pipeline, "_STRIPRTF_AVAILABLE", True)
+        monkeypatch.setattr(pipeline, "_rtf_to_text", lambda raw: "extracted via striprtf")
+        out = convert_file(str(f), auto_bijoy=False)
+        assert "rtf" in out["steps"]
+        assert out["text"] == "extracted via striprtf"
+
+    def test_rtf_markitdown_fallback_when_striprtf_empty(self, tmp_path, monkeypatch):
+        """When striprtf returns empty, falls back to MarkItDown."""
+        f = tmp_path / "empty.rtf"
+        f.write_bytes(b"dummy")
+        monkeypatch.setattr(pipeline, "_STRIPRTF_AVAILABLE", True)
+        monkeypatch.setattr(pipeline, "_rtf_to_text", lambda raw: "")
+        md = FakeMarkItDown("fallback text")
+        out = convert_file(str(f), markitdown=md)
+        assert "rtf" in out["steps"]
+        assert out["text"] == "fallback text"
+
 
 class TestImageOcrDisabled:
     def test_image_ocr_disabled(self, tmp_path):
