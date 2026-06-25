@@ -35,7 +35,6 @@ UNSUPPORTED_EXTS = {
     ".pfb", ".pfm",         # PostScript fonts
     ".woff", ".woff2",      # Web fonts
     ".psd",                 # Photoshop (binary layers, no plain text)
-    ".odt", ".ods", ".odp", ".odg",  # OpenDocument — save as .docx/.pdf first
 }
 
 try:

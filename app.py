@@ -42,22 +42,19 @@ _RELEASES_API = "https://api.github.com/repos/GRU-953/markitdown-converter/relea
 def _validate_path(path: str) -> None:
     """
     Raise ValueError on security violations before conversion.
-    Catches path traversal, missing files, and oversized inputs.
+    Catches path traversal, symlinks, missing files, and oversized inputs.
     """
-    p = Path(path).resolve()
-    # Reject paths that escaped a common parent via traversal fragments
-    try:
-        p.relative_to(p.anchor)  # always true — real guard is the resolve() above
-    except ValueError:
-        pass
-    # Disallow names with traversal markers that survived resolve()
+    orig = Path(path)
+    # Check symlink BEFORE resolve() — resolve() follows symlinks so is_symlink() would be False after
+    if orig.is_symlink():
+        raise ValueError("Symlink paths are not permitted.")
+    # Disallow traversal markers in the raw path string
     raw = str(path)
     if ".." in raw.replace("\\", "/").split("/"):
         raise ValueError("Invalid file path.")
+    p = orig.resolve()
     if not p.exists():
         raise FileNotFoundError(f"File not found: {path}")
-    if p.is_symlink():
-        raise ValueError("Symlink paths are not permitted.")
     if p.is_dir():
         raise ValueError("Path is a directory, not a file.")
     size = p.stat().st_size

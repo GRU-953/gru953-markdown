@@ -151,6 +151,7 @@ html, body {
 .fstat.doing { color: var(--primary); }
 .fstat.done { color: var(--ok); }
 .fstat.error { color: var(--err); }
+.fstat.warn  { color: var(--warn); }
 .file-row .fx { opacity: 0; color: var(--text-faint); padding: 3px; border-radius: 6px; }
 .file-row:hover .fx { opacity: 1; }
 .file-row .fx:hover { background: var(--surface-3); color: var(--err); }
@@ -240,7 +241,7 @@ html, body {
 .toast { background: var(--surface-3); color: var(--text); border: 1px solid var(--border-2);
   padding: 10px 18px; border-radius: var(--radius-md); font-size: 13px; box-shadow: var(--shadow);
   display: flex; align-items: center; gap: 9px; animation: rise 0.25s var(--ease); }
-.toast.ok i { color: var(--ok); } .toast.err i { color: var(--err); }
+.toast.ok i { color: var(--ok); } .toast.err i { color: var(--err); } .toast.warn i { color: var(--warn); }
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
 .fade-in { animation: fadeIn 0.25s var(--ease); }

@@ -201,26 +201,39 @@ async function convertAll() {
     if (f.status !== "pending" && f.status !== "error") continue;
     f.status = "doing"; f.error = ""; renderFiles();
     const res = await api().convert(f.path);
-    if (res.ok) { f.status = "done"; f.text = res.text; f.steps = res.steps; }
-    else { f.status = "error"; f.error = friendlyError(res.error); }
+    if (res.ok) {
+      f.text = res.text; f.steps = res.steps;
+      f.status = res.steps.some(s => EMPTY_STEPS.has(s)) ? "warn" : "done";
+    } else {
+      f.status = "error"; f.error = friendlyError(res.error);
+    }
     renderFiles();
     if (selected === files.indexOf(f) || selected < 0) selectFile(files.indexOf(f));
   }
   $("convert-btn").disabled = false;
-  const ok = files.filter(f => f.status === "done").length;
-  const err = files.filter(f => f.status === "error").length;
-  toast(err ? `${ok} converted, ${err} failed` : `All ${ok} converted`, err ? "err" : "ok");
+  const ok   = files.filter(f => f.status === "done").length;
+  const warn = files.filter(f => f.status === "warn").length;
+  const err  = files.filter(f => f.status === "error").length;
+  const parts = [];
+  if (ok)   parts.push(`${ok} converted`);
+  if (warn) parts.push(`${warn} empty`);
+  if (err)  parts.push(`${err} failed`);
+  toast(parts.join(", "), err ? "err" : warn ? "warn" : "ok");
 }
 function retryFailed() { convertAll(); }
 
 const STEP_LABEL = {
   markitdown: "MarkItDown", ocr: "OCR", bijoy: "Bijoy→Unicode",
   doc_ole: "Legacy Word (.doc)", pdf_ocr: "PDF OCR",
-  ocr_empty: "No text found", unsupported: "Unsupported format",
-  doc_empty: "No text in doc", pdf_empty: "No text in PDF",
-  image_ocr_disabled: "OCR disabled", rtf: "RTF extract",
+  ocr_empty: "No text found", doc_empty: "No text in doc",
+  pdf_empty: "No text in PDF", image_ocr_disabled: "OCR disabled",
+  rtf: "RTF extract",
 };
-const STAT_ICON = { pending: "ti-circle", doing: "ti-loader-2", done: "ti-circle-check", error: "ti-alert-circle" };
+const EMPTY_STEPS = new Set(["ocr_empty", "doc_empty", "pdf_empty", "image_ocr_disabled"]);
+const STAT_ICON = {
+  pending: "ti-circle", doing: "ti-loader-2",
+  done: "ti-circle-check", warn: "ti-alert-triangle", error: "ti-alert-circle",
+};
 function renderFiles() {
   $("file-count").textContent = files.length;
   $("retry-btn").disabled = !files.some(f => f.status === "error");
@@ -455,7 +468,7 @@ function esc(s) {
 function toast(msg, kind) {
   const t = document.createElement("div");
   t.className = "toast " + (kind || "");
-  t.innerHTML = `<i class="ti ${kind === "ok" ? "ti-check" : kind === "err" ? "ti-alert-triangle" : "ti-info-circle"}"></i>${esc(msg)}`;
+  t.innerHTML = `<i class="ti ${kind === "ok" ? "ti-check" : kind === "err" ? "ti-alert-circle" : kind === "warn" ? "ti-alert-triangle" : "ti-info-circle"}"></i>${esc(msg)}`;
   $("toasts").appendChild(t);
   setTimeout(() => { t.style.opacity = "0"; setTimeout(() => t.remove(), 300); }, 2600);
 }
