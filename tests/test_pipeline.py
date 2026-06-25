@@ -170,6 +170,17 @@ class TestErrors:
         with pytest.raises(FileNotFoundError):
             convert_file("/no/such/file.pdf")
 
+    def test_memory_error_becomes_value_error(self, tmp_path):
+        """MemoryError from MarkItDown (e.g. huge ZIP) surfaces as a friendly ValueError."""
+        f = _touch(tmp_path, "huge.zip")
+
+        class OOMMarkItDown:
+            def convert(self, path):
+                raise MemoryError("ran out of RAM")
+
+        with pytest.raises(ValueError, match="(?i)too large|insufficient memory"):
+            convert_file(str(f), markitdown=OOMMarkItDown())
+
     def test_lazy_markitdown_singleton(self, monkeypatch):
         created = []
 
