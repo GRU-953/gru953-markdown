@@ -17,6 +17,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set version from tag
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"           # e.g. v4.2.1
+          $ver = $tag.TrimStart("v")                 # e.g. 4.2.1
+          # Update APP_VERSION in app.py
+          (Get-Content app.py) -replace 'APP_VERSION = "v[^"]*"', "APP_VERSION = `"$tag`"" |
+            Set-Content app.py
+          # Update version fields in installer.iss
+          (Get-Content installer.iss) -replace 'AppVersion=[\d.]+', "AppVersion=$ver" |
+            Set-Content installer.iss
+          (Get-Content installer.iss) -replace 'VersionInfoVersion=[\d.]+', "VersionInfoVersion=$ver" |
+            Set-Content installer.iss
+          Write-Output "Version set to $tag ($ver)"
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -94,14 +109,35 @@ jobs:
           $mb = [Math]::Round((Get-Item $exe).Length / 1MB, 1)
           Write-Output "Built: MarkItDownConverter.exe ($mb MB)"
 
+      - name: Create PDF smoke-test fixture
+        shell: pwsh
+        run: |
+          python -c "
+import pymupdf
+doc = pymupdf.open()
+page = doc.new_page()
+page.insert_text((50, 100), 'MarkItDown Converter PDF smoke test', fontsize=14)
+doc.save('tests/fixtures/sample.pdf')
+doc.close()
+print('Created sample.pdf')
+"
+
       - name: Smoke-test bundled converters
         shell: pwsh
         run: |
-          .\dist\MarkItDownConverter.exe --selftest "tests/fixtures/sample.docx" > selftest.txt 2>&1
-          $out = Get-Content selftest.txt -Raw
-          Write-Output $out
+          # Test Word document (MarkItDown + mammoth)
+          .\dist\MarkItDownConverter.exe --selftest "tests/fixtures/sample.docx" > selftest_docx.txt 2>&1
+          $out = Get-Content selftest_docx.txt -Raw
+          Write-Output "DOCX: $out"
           if ($out -notmatch "SELFTEST_OK") {
-            throw "Bundled exe failed to convert sample.docx — a format dependency is missing from the build."
+            throw "Bundled exe failed to convert sample.docx — a format dependency is missing."
+          }
+          # Test PDF (MarkItDown pdfminer text-layer path)
+          .\dist\MarkItDownConverter.exe --selftest "tests/fixtures/sample.pdf" > selftest_pdf.txt 2>&1
+          $out2 = Get-Content selftest_pdf.txt -Raw
+          Write-Output "PDF:  $out2"
+          if ($out2 -notmatch "SELFTEST_OK") {
+            throw "Bundled exe failed to convert sample.pdf — pdfminer or pymupdf is missing from the build."
           }
 
       - name: Build installer with Inno Setup

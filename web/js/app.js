@@ -26,6 +26,15 @@ async function start() {
   renderFiles(); renderOutput();
   checkForUpdate();
   if (!cfg.onboarding_seen) showOnboarding();
+  populateAbout();
+}
+
+async function populateAbout() {
+  try {
+    const ver = await api().get_version();
+    const el = document.getElementById("about-ver");
+    if (el) el.textContent = `MarkItDown Converter ${ver} · GRU-953`;
+  } catch (e) {}
 }
 
 function showOnboarding() {
@@ -76,6 +85,33 @@ function applyPalette() {
     c.classList.toggle("active", c.dataset.palette === cfg.palette));
 }
 function save(patch) { Object.assign(cfg, patch); if (window.pywebview) api().save_config(patch); }
+
+/* ── Error translation ────────────────────────────────────────────────────── */
+function friendlyError(raw) {
+  if (!raw) return "Something went wrong — please try again.";
+  const r = raw.toLowerCase();
+  if (r.includes("file not found") || r.includes("no such file"))
+    return "File not found. It may have been moved or deleted.";
+  if (r.includes("missingdependencyexception") || r.includes("dependencies needed to read"))
+    return "This file type isn’t supported. Try converting it to PDF or .docx first.";
+  if (r.includes("tesseract not found"))
+    return "Text scanning (OCR) is unavailable — please reinstall the app.";
+  if (r.includes("pdf ocr requires pymupdf") || r.includes("no module named 'pymupdf'"))
+    return "PDF scanning requires a library that isn’t installed. Try reinstalling the app.";
+  if (r.includes("failed to open") || r.includes("could not open pdf"))
+    return "This PDF couldn’t be opened. It may be damaged or password-protected.";
+  if (r.includes("ocr failed") || r.includes("image_to_string"))
+    return "Couldn’t read text from this image. Try a clearer photo or a different file.";
+  if (r.includes("permission") || r.includes("access is denied"))
+    return "Permission denied — the file is open in another program.";
+  if (r.includes("unicodedecodeerror") || r.includes("codec can"))
+    return "This file contains characters the converter couldn’t read. Try saving it as UTF-8.";
+  if (r.includes("timeout") || r.includes("timed out"))
+    return "Conversion took too long and was stopped. Try a smaller file.";
+  // Fallback: hide stack trace, show only first sentence
+  const first = raw.split(/[\n\r]/)[0].replace(/^[A-Za-z]+Error:\s*/i, "").trim();
+  return first.length > 120 ? first.slice(0, 117) + "…" : first || "Something went wrong.";
+}
 
 /* ── Navigation ───────────────────────────────────────────────────────────── */
 const VIEW_META = {
@@ -158,7 +194,7 @@ async function convertAll() {
     f.status = "doing"; f.error = ""; renderFiles();
     const res = await api().convert(f.path);
     if (res.ok) { f.status = "done"; f.text = res.text; f.steps = res.steps; }
-    else { f.status = "error"; f.error = res.error; }
+    else { f.status = "error"; f.error = friendlyError(res.error); }
     renderFiles();
     if (selected === files.indexOf(f) || selected < 0) selectFile(files.indexOf(f));
   }
@@ -292,7 +328,7 @@ async function runOcr() {
   const isPdf = (ocrPath || "").toLowerCase().endsWith(".pdf");
   $("ocr-out").value = isPdf ? "Scanning PDF pages… this may take a moment." : "Extracting text…";
   const res = await api().ocr(ocrPath, lang, $("ocr-bijoy").checked);
-  $("ocr-out").value = res.ok ? res.text : ("Could not extract text: " + res.error);
+  $("ocr-out").value = res.ok ? res.text : friendlyError(res.error);
 }
 
 /* ── Bijoy view ───────────────────────────────────────────────────────────── */
