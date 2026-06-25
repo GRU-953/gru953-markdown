@@ -13,7 +13,7 @@ echo [2/4] Converting icon PNG to ICO...
 python -c "from PIL import Image; img=Image.open('assets/app_icon.png'); img.save('assets/app_icon.ico', format='ICO', sizes=[(256,256),(128,128),(64,64),(32,32),(16,16)])"
 
 echo [3/4] Running PyInstaller...
-python -m PyInstaller --noconfirm --onefile --console ^
+python -m PyInstaller --noconfirm --onefile --windowed ^
   --name "MarkItDownConverter" ^
   --icon "assets/app_icon.ico" ^
   --add-data "web;web" ^

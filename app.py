@@ -71,7 +71,7 @@ class Api:
             "All files (*.*)",
         )
         result = self._window.create_file_dialog(
-            webview.OPEN_DIALOG, allow_multiple=True, file_types=types
+            webview.FileDialog.OPEN, allow_multiple=True, file_types=types
         )
         return [self._meta(p) for p in (result or [])]
 
@@ -79,7 +79,7 @@ class Api:
         types = ("Images (*.png;*.jpg;*.jpeg;*.bmp;*.tiff;*.gif;*.webp)",
                  "All files (*.*)")
         result = self._window.create_file_dialog(
-            webview.OPEN_DIALOG, allow_multiple=False, file_types=types
+            webview.FileDialog.OPEN, allow_multiple=False, file_types=types
         )
         if result:
             return self._meta(result[0])
@@ -156,7 +156,7 @@ class Api:
         try:
             init = self._cfg.get("last_output_folder") or None
             dest = self._window.create_file_dialog(
-                webview.SAVE_DIALOG, directory=init or "",
+                webview.FileDialog.SAVE, directory=init or "",
                 save_filename=suggested or f"output.{ext}",
             )
             if not dest:
