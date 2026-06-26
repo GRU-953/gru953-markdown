@@ -626,6 +626,21 @@ class TestExtractXlsxDirect:
         result = _extract_xlsx_direct(str(f))
         assert result == ""
 
+    def test_newline_in_cell_replaced_by_space(self, tmp_path, monkeypatch):
+        """Newlines inside cell values must be normalised to spaces (GFM table safety)."""
+        import sys
+        sheet = self._make_sheet("Sheet1", [("Header",), ("line1\nline2",)])
+        fake_mod = self._make_fake_openpyxl([sheet])
+        monkeypatch.setitem(sys.modules, "openpyxl", fake_mod)
+
+        f = tmp_path / "nl.xlsx"
+        f.write_bytes(b"dummy")
+        result = _extract_xlsx_direct(str(f))
+        # The raw newline inside the cell value must be collapsed to a space;
+        # the GFM row-separator newlines between table rows are still present.
+        assert "line1 line2" in result
+        assert "line1\nline2" not in result
+
     def test_header_only_sheet(self, tmp_path, monkeypatch):
         """A sheet with only a header row (no data rows) emits header + GFM separator only."""
         import sys

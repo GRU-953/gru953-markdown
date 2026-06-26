@@ -185,3 +185,15 @@ class TestNewDefaults:
     def test_use_windows_colors_default_false(self, tmp_path, monkeypatch):
         _patch_file(tmp_path, monkeypatch)
         assert settings.load()["use_windows_colors"] is False
+
+    def test_language_default_en(self, tmp_path, monkeypatch):
+        _patch_file(tmp_path, monkeypatch)
+        assert settings.load()["language"] == "en"
+
+    def test_last_input_folder_default_empty(self, tmp_path, monkeypatch):
+        _patch_file(tmp_path, monkeypatch)
+        assert settings.load()["last_input_folder"] == ""
+
+    def test_last_output_folder_default_empty(self, tmp_path, monkeypatch):
+        _patch_file(tmp_path, monkeypatch)
+        assert settings.load()["last_output_folder"] == ""

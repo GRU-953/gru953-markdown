@@ -4,6 +4,20 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.33] — 2026-06-27
+
+### Tests — 4 new coverage-gap tests (193 total, up from 189)
+
+**`test_settings.py`** — three untested default keys added to `TestNewDefaults`:
+- `test_language_default_en`: `language` defaults to `"en"`
+- `test_last_input_folder_default_empty`: `last_input_folder` defaults to `""`
+- `test_last_output_folder_default_empty`: `last_output_folder` defaults to `""`
+
+**`test_pipeline.py`**:
+- `TestExtractXlsxDirect.test_newline_in_cell_replaced_by_space`: embedded newlines inside XLSX cell values must be normalised to a single space before being written into GFM table rows; the `.replace("\n", " ")` call at `pipeline.py:265` was untested
+
+---
+
 ## [v4.10.32] — 2026-06-27
 
 ### Tests — 5 new coverage-gap tests (189 total, up from 184)
