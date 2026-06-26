@@ -14,7 +14,7 @@ def nfc(s):
     """Normalise to NFC so ya+nukta (U+09AF U+09BC) == yya (U+09DF)."""
     return unicodedata.normalize("NFC", s)
 
-from bijoy_unicode import convert_bijoy_to_unicode, detect_script, is_bijoy, _rearrange
+from bijoy_unicode import convert_bijoy_to_unicode, detect_script, is_bijoy, _rearrange, _ch
 
 
 # ── detect_script ─────────────────────────────────────────────────────────────
@@ -267,3 +267,16 @@ class TestPostMap:
         # Double escaped halant in input: '\\&' → ্‌  (two consecutive)
         result = convert_bijoy_to_unicode("\\&\\&")
         assert result.count("্‌") == 1
+
+
+# ── _ch boundary ─────────────────────────────────────────────────────────────
+
+class TestChBoundary:
+    def test_negative_index_returns_empty(self):
+        assert _ch("abc", -1) == ""
+
+    def test_beyond_length_returns_empty(self):
+        assert _ch("abc", 10) == ""
+
+    def test_valid_index_returns_char(self):
+        assert _ch("abc", 0) == "a"

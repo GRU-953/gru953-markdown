@@ -76,6 +76,13 @@ class TestSetupTesseractBundle:
             import os
             assert "TESSDATA_PREFIX" in os.environ
 
+    def test_bundle_path_exe_not_found_leaves_cmd_unchanged(self):
+        orig_cmd = pytesseract.pytesseract.tesseract_cmd
+        with unittest.mock.patch.object(sys, "_MEIPASS", "/fake/bundle", create=True), \
+             unittest.mock.patch.object(Path, "exists", return_value=False):
+            _setup_tesseract()
+            assert pytesseract.pytesseract.tesseract_cmd == orig_cmd
+
 
 # ── ocr_image (mocked pytesseract) ───────────────────────────────────────────
 

@@ -236,6 +236,17 @@ class TestErrors:
         with pytest.raises(ValueError, match="(?i)too large|insufficient memory"):
             convert_file(str(f), markitdown=OOMMarkItDown())
 
+    def test_generic_format_non_memory_error_reraises(self, tmp_path):
+        """Non-MemoryError from MarkItDown in generic branch propagates unchanged."""
+        f = _touch(tmp_path, "doc.html")
+
+        class BrokenMD:
+            def convert(self, path):
+                raise ValueError("parse failed")
+
+        with pytest.raises(ValueError, match="parse failed"):
+            convert_file(str(f), markitdown=BrokenMD())
+
     def test_lazy_markitdown_singleton(self, monkeypatch):
         created = []
 

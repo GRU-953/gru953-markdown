@@ -4,6 +4,25 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.36] — 2026-06-27
+
+### Tests — boundary and re-raise coverage (208 total, up from 203)
+
+Closed three concrete coverage gaps identified in audit:
+
+`TestChBoundary` (bijoy_unicode):
+- `test_negative_index_returns_empty`: `_ch("abc", -1)` → `""` (guard: `0 <= i`)
+- `test_beyond_length_returns_empty`: `_ch("abc", 10)` → `""` (guard: `i < len`)
+- `test_valid_index_returns_char`: `_ch("abc", 0)` → `"a"` (normal path)
+
+`TestSetupTesseractBundle` (ocr_engine):
+- `test_bundle_path_exe_not_found_leaves_cmd_unchanged`: `_MEIPASS` present but `exe.exists()` → False → `tesseract_cmd` is not mutated
+
+`TestErrors` (pipeline):
+- `test_generic_format_non_memory_error_reraises`: non-MemoryError from MarkItDown in the generic `else:` branch propagates unchanged (bare `raise` at pipeline.py:537)
+
+---
+
 ## [v4.10.35] — 2026-06-27
 
 ### Tests — OCR PDF and pymupdf availability coverage (203 total, up from 199)
