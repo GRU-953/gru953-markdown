@@ -27,6 +27,7 @@ IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".tif", ".gif", ".webp"}
 PDF_EXT = ".pdf"
 DOC_EXT = ".doc"
 RTF_EXT = ".rtf"
+XLSX_EXT = {".xlsx"}
 # Formats that contain no text — return a friendly error instead of a cryptic one
 UNSUPPORTED_EXTS = {
     ".eps", ".ai",          # PostScript / Illustrator vector
@@ -170,6 +171,39 @@ def is_rtf(path) -> bool:
     return Path(path).suffix.lower() == RTF_EXT
 
 
+def is_xlsx(path) -> bool:
+    """Return True if *path* is a modern Excel (.xlsx) file."""
+    return Path(path).suffix.lower() in XLSX_EXT
+
+
+def _extract_xlsx_direct(path: str) -> str:
+    """
+    Extract text from an XLSX file using openpyxl in read_only mode.
+
+    This is a memory-efficient fallback for files that exhaust MarkItDown's ONNX
+    models or cause numpy to fail allocating huge arrays.  read_only=True streams
+    rows lazily so memory use stays proportional to one row at a time, not the
+    full sheet.  Returns empty string if openpyxl is unavailable or extraction
+    fails for any reason.
+    """
+    try:
+        import openpyxl
+    except ImportError:
+        return ""
+    try:
+        wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+        rows = []
+        for sheet in wb.worksheets:
+            for row in sheet.iter_rows(values_only=True):
+                cells = [str(v) for v in row if v is not None]
+                if cells:
+                    rows.append(" | ".join(cells))
+        wb.close()
+        return "\n".join(rows)
+    except Exception:
+        return ""
+
+
 def is_unsupported(path) -> bool:
     """Return True if *path* has an extension that can never yield text."""
     return Path(path).suffix.lower() in UNSUPPORTED_EXTS
@@ -230,8 +264,16 @@ def convert_file(
     elif is_pdf(p):
         # Always try text-layer extraction first
         md = markitdown or _get_markitdown()
-        result = md.convert(str(p))
-        text = result.text_content or ""
+        try:
+            result = md.convert(str(p))
+            text = result.text_content or ""
+        except Exception as e:
+            if isinstance(e, MemoryError) or "MemoryError" in str(e):
+                raise ValueError(
+                    "File is too large to convert: insufficient memory. "
+                    "Try closing other applications or converting a smaller file."
+                )
+            raise
         steps.append("markitdown")
         # Fall back to OCR if the PDF has no text layer
         if auto_ocr and not text.strip():
@@ -276,16 +318,33 @@ def convert_file(
             except Exception:
                 text = ""
         steps.append("rtf")
+    elif is_xlsx(p):
+        # Try MarkItDown first; fall back to openpyxl read_only on any failure.
+        # Large XLSX files can trigger ONNXRuntimeError (magika model allocation)
+        # or a MarkItDownException wrapping MemoryError (numpy array too large).
+        # openpyxl read_only streams rows lazily and uses no ONNX models.
+        try:
+            md = markitdown or _get_markitdown()
+            result = md.convert(str(p))
+            text = result.text_content or ""
+            steps.append("markitdown")
+        except Exception:
+            text = _extract_xlsx_direct(str(p))
+            steps.append("xlsx_direct")
+        if not text.strip():
+            steps.append("xlsx_empty")
     else:
         md = markitdown or _get_markitdown()
         try:
             result = md.convert(str(p))
             text = result.text_content or ""
-        except MemoryError:
-            raise ValueError(
-                "File is too large to convert: insufficient memory. "
-                "Try closing other applications or converting a smaller file."
-            )
+        except Exception as e:
+            if isinstance(e, MemoryError) or "MemoryError" in str(e):
+                raise ValueError(
+                    "File is too large to convert: insufficient memory. "
+                    "Try closing other applications or converting a smaller file."
+                )
+            raise
         steps.append("markitdown")
 
     if auto_bijoy and text and is_bijoy_func(text):

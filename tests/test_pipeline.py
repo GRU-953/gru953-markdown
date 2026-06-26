@@ -11,7 +11,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pipeline
-from pipeline import convert_file, is_image, is_legacy_doc, is_unsupported, is_rtf
+from pipeline import convert_file, is_image, is_legacy_doc, is_unsupported, is_rtf, is_xlsx
 
 
 # ── fakes ───────────────────────────────────────────────────────────────────
@@ -181,6 +181,36 @@ class TestErrors:
         with pytest.raises(ValueError, match="(?i)too large|insufficient memory"):
             convert_file(str(f), markitdown=OOMMarkItDown())
 
+    def test_wrapped_memory_error_pdf_becomes_value_error(self, tmp_path):
+        """MarkItDown-wrapped MemoryError on PDF (PdfConverter) surfaces as friendly ValueError."""
+        f = _touch(tmp_path, "huge.pdf")
+
+        class OOMMarkItDown:
+            def convert(self, path):
+                raise RuntimeError(
+                    "File conversion failed after 1 attempts: "
+                    "- PdfConverter threw MemoryError with message: "
+                    "Unable to allocate 1.2 GiB"
+                )
+
+        with pytest.raises(ValueError, match="(?i)too large|insufficient memory"):
+            convert_file(str(f), markitdown=OOMMarkItDown())
+
+    def test_wrapped_memory_error_docx_becomes_value_error(self, tmp_path):
+        """MarkItDown-wrapped MemoryError on DOCX/PPTX surfaces as friendly ValueError."""
+        f = _touch(tmp_path, "huge.docx")
+
+        class OOMMarkItDown:
+            def convert(self, path):
+                raise RuntimeError(
+                    "File conversion failed after 1 attempts: "
+                    "- DocxConverter threw MemoryError with message: "
+                    "Unable to allocate 800 MiB"
+                )
+
+        with pytest.raises(ValueError, match="(?i)too large|insufficient memory"):
+            convert_file(str(f), markitdown=OOMMarkItDown())
+
     def test_lazy_markitdown_singleton(self, monkeypatch):
         created = []
 
@@ -305,3 +335,40 @@ class TestImageOcrDisabled:
         out = convert_file(str(f), auto_ocr=False)
         assert out["steps"] == ["image_ocr_disabled"]
         assert out["text"] == ""
+
+
+# ── XLSX extraction ───────────────────────────────────────────────────────────
+
+class TestXlsx:
+    def test_is_xlsx_true(self):
+        assert is_xlsx("data.xlsx") is True
+        assert is_xlsx("DATA.XLSX") is True
+
+    def test_is_xlsx_false(self):
+        assert is_xlsx("data.xls") is False
+        assert is_xlsx("data.docx") is False
+
+    def test_xlsx_uses_markitdown_when_it_works(self, tmp_path):
+        f = tmp_path / "data.xlsx"
+        f.write_bytes(b"dummy")
+        md = FakeMarkItDown("col1 | col2\nrow1 | row2")
+        out = convert_file(str(f), markitdown=md)
+        assert "markitdown" in out["steps"]
+        assert out["text"] == "col1 | col2\nrow1 | row2"
+
+    def test_xlsx_falls_back_to_openpyxl_on_markitdown_failure(self, tmp_path, monkeypatch):
+        """ONNXRuntimeError / wrapped MemoryError triggers openpyxl fallback."""
+        f = tmp_path / "huge.xlsx"
+        f.write_bytes(b"dummy")
+
+        class OOMMarkItDown:
+            def convert(self, path):
+                raise RuntimeError(
+                    "File conversion failed after 1 attempts: "
+                    "- XlsxConverter threw MemoryError"
+                )
+
+        monkeypatch.setattr(pipeline, "_extract_xlsx_direct", lambda path: "row1 | col1\nrow2 | col2")
+        out = convert_file(str(f), markitdown=OOMMarkItDown())
+        assert "xlsx_direct" in out["steps"]
+        assert out["text"] == "row1 | col1\nrow2 | col2"
