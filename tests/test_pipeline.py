@@ -899,6 +899,61 @@ class TestExtractLegacyDoc:
         monkeypatch.setitem(sys.modules, "olefile", fake_mod)
         assert _extract_legacy_doc("x.doc") == ""
 
+    def test_1table_flag_extracts_text(self, monkeypatch):
+        """FIB flags bit 9 set → 1Table stream used; also covers the successful return path."""
+        import struct as _struct
+        binary = bytearray(512)
+        _struct.pack_into("<H", binary, 10, 0x0200)  # bit 9 set → use 1Table
+        _struct.pack_into("<I", binary, 48, 20)      # cc_text = 20
+        _struct.pack_into("<I", binary, 134, 4)      # fc_chpx = 4 → cp0 from tdata[4:8]
+        for i in range(200, 220):
+            binary[i] = ord("A")                     # printable ASCII
+        binary = bytes(binary)
+
+        tdata = bytearray(8)
+        _struct.pack_into("<I", tdata, 4, 200)       # cp0 = 200
+        tdata = bytes(tdata)
+
+        class FakeStream:
+            def __init__(self, data): self._data = data
+            def read(self): return self._data
+
+        class FakeOleFileIO:
+            def __init__(self, path): pass
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+            def exists(self, name): return name in ("WordDocument", "1Table")
+            def openstream(self, name):
+                return FakeStream(binary if name == "WordDocument" else tdata)
+
+        fake_mod = type("olefile", (), {"OleFileIO": FakeOleFileIO})
+        monkeypatch.setitem(sys.modules, "olefile", fake_mod)
+        assert _extract_legacy_doc("x.doc") == "A" * 20
+
+    def test_no_table_stream_fallback_scan_extracts_text(self, monkeypatch):
+        """When no table stream exists, the fallback ASCII density scan locates printable text."""
+        import struct as _struct
+        binary = bytearray(512)
+        _struct.pack_into("<I", binary, 48, 20)      # cc_text = 20
+        for i in range(200, 220):
+            binary[i] = ord("B")                     # printable ASCII — scanner will find them
+        binary = bytes(binary)
+
+        class FakeStream:
+            def __init__(self, data): self._data = data
+            def read(self): return self._data
+
+        class FakeOleFileIO:
+            def __init__(self, path): pass
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+            def exists(self, name): return name == "WordDocument"  # no table stream
+            def openstream(self, name): return FakeStream(binary)
+
+        fake_mod = type("olefile", (), {"OleFileIO": FakeOleFileIO})
+        monkeypatch.setitem(sys.modules, "olefile", fake_mod)
+        assert _extract_legacy_doc("x.doc") == "B" * 20
+
 
 # ── DOCX font-name Bijoy detection ───────────────────────────────────────────
 

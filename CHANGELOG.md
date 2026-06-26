@@ -4,6 +4,16 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.59] — 2026-06-27
+
+### Tests — legacy doc + ocr_engine branch coverage (291 total, up from 288)
+
+- `TestExtractLegacyDoc.test_1table_flag_extracts_text`: FIB flags bit 9 set → `table_name="1Table"` is chosen; also covers the successful extraction `return text` path for the first time in unit tests
+- `TestExtractLegacyDoc.test_no_table_stream_fallback_scan_extracts_text`: when neither `0Table` nor `1Table` exists, the fallback ASCII density scan (lines 121–135 of pipeline.py) locates the printable region and returns text
+- `TestSetupTesseractBundle.test_other_platform_is_noop`: on non-win32 without `MEIPASS`, `_setup_tesseract()` skips both branches and leaves `tesseract_cmd` unchanged
+
+---
+
 ## [v4.10.58] — 2026-06-27
 
 ### Tests — 3 pipeline branch tests (288 total, up from 285)

@@ -126,6 +126,13 @@ class TestSetupTesseractBundle:
             _setup_tesseract()
         assert "TESSDATA_PREFIX" not in os.environ
 
+    def test_other_platform_is_noop(self):
+        """On non-win32 without MEIPASS, _setup_tesseract() changes nothing."""
+        orig_cmd = pytesseract.pytesseract.tesseract_cmd
+        with unittest.mock.patch("sys.platform", "linux"):
+            _setup_tesseract()
+        assert pytesseract.pytesseract.tesseract_cmd == orig_cmd
+
 
 # ── ocr_image (mocked pytesseract) ───────────────────────────────────────────
 
