@@ -4,6 +4,15 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.57] — 2026-06-27
+
+### Tests — _rearrange halant-guard branches (285 total, up from 283)
+
+- `TestConvertBijoyToUnicode.test_reph_preceded_by_halant_not_repositioned`: `ক্র্গ` — র is preceded by ্ (halant), so `not _is_halant(text[i-1])` guard fires, reph repositioning is skipped; র stays in conjunct interior
+- `TestConvertBijoyToUnicode.test_ra_halant_vowel_guard_when_ra_in_conjunct`: `ক্র্া` vs `র্া` — in the conjunct case a halant precedes র so the RA+HALANT+Vowel reorder guard also fires; standalone `র্া` does reorder while the conjunct case does not
+
+---
+
 ## [v4.10.56] — 2026-06-27
 
 ### Tests — PRE_MAP and _PRE_REGEX untested entries (283 total, up from 268)

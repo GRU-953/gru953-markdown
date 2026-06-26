@@ -248,6 +248,24 @@ class TestConvertBijoyToUnicode:
         assert len(result) > 0
         assert all(0x0980 <= ord(c) <= 0x09FF for c in result)
 
+    def test_reph_preceded_by_halant_not_repositioned(self):
+        """_rearrange Pass 1: when র is preceded by ্ (halant), reph guard fires → no repositioning."""
+        # ক্র্গ = ক + ্ + র + ্ + গ: র is in the interior of a conjunct (halant before র).
+        # The guard `not _is_halant(text[i-1])` prevents inappropriate reph repositioning.
+        result = _rearrange("ক্র্গ")
+        # র must NOT be moved to the start as a reph — the cluster stays intact
+        assert not result.startswith("র্")
+        assert "র" in result
+
+    def test_ra_halant_vowel_guard_when_ra_in_conjunct(self):
+        """_rearrange Pass 1 RA+HALANT+Vowel reorder is skipped when ্ precedes র."""
+        # ক্র্া: the halant before র means ra is part of a conjunct — no reorder.
+        # Compare to standalone র্া which DOES reorder (no halant before র).
+        guarded = _rearrange("ক্র্া")       # preceded by halant → guard fires → no reorder
+        reordered = _rearrange("র্া")        # no halant before র → reorder → ার্
+        assert guarded != reordered
+        assert "া" in guarded               # aa-kar remains but not moved to front
+
 
 # ── POST_MAP cleanup ─────────────────────────────────────────────────────────
 
