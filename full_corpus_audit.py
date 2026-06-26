@@ -7,7 +7,7 @@ automatically on better machines:
   Workers      auto-detect: floor(logical_cpus * 0.70) capped by free RAM / 700 MB
   Sort order   smallest files first; large files last
   Large ZIPs   extracted to temp dir; each member tested individually (no OOM)
-  Large PDFs   split into 20-page chunks; each chunk tested separately
+  Large PDFs   split into 20-page chunks; each chunk tested separately (timeout 150s base + 1s/MB)
   Large XLSX   split into per-sheet temp files; each sheet tested separately
   RAM throttle dispatching pauses if system RAM exceeds --ram-cap (default 88%)
   Worker       single ONNX session per lifetime (not reloaded per file)
@@ -538,14 +538,14 @@ def main():
     ap.add_argument("--workers", default="auto",
                     help="Worker count or 'auto' (default auto — 70%% CPU, capped by free RAM)")
     ap.add_argument("--out", default="full_audit_results.json")
-    ap.add_argument("--file-timeout", type=int, default=120,
-                    help="Base per-file timeout in seconds; scales +1s/MB (default 120)")
+    ap.add_argument("--file-timeout", type=int, default=150,
+                    help="Base per-file timeout in seconds; scales +1s/MB (default 150)")
     ap.add_argument("--ram-cap", type=int, default=88,
                     help="Pause dispatch if system RAM %% >= this value (default 88)")
     ap.add_argument("--expand-threshold", type=float, default=20.0,
                     help="Expand ZIPs / split PDFs/XLSX above this size in MB (default 20)")
     ap.add_argument("--pdf-chunk-pages", type=int, default=20,
-                    help="Pages per PDF chunk when splitting (default 50)")
+                    help="Pages per PDF chunk when splitting (default 20)")
     args = ap.parse_args()
 
     auto_ocr = not args.no_ocr
