@@ -23,7 +23,7 @@ from bijoy_unicode import convert_bijoy_to_unicode, detect_script
 # init until first actual OCR call so the window opens faster on startup.
 from pipeline import convert_file, is_image, is_pdf, is_legacy_doc
 
-APP_VERSION = "v4.10.1"
+APP_VERSION = "v4.10.2"
 MAX_FILE_BYTES = 200 * 1024 * 1024  # 200 MB hard limit
 _RELEASES_API = "https://api.github.com/repos/GRU-953/gru953-markdown/releases/latest"
 
@@ -224,14 +224,22 @@ class Api:
 
     # ── export ────────────────────────────────────────────────────────────────
 
+    def _export_dir(self) -> dict:
+        """Return {directory: ...} for the save dialog, mirroring _dialog_dir() logic."""
+        d = self._cfg.get("last_output_folder") or ""
+        if d and Path(d).is_dir():
+            return {"directory": d}
+        for fb in (Path.home() / "Documents", Path.home()):
+            if fb.is_dir():
+                return {"directory": str(fb)}
+        return {}
+
     def export_text(self, text: str, ext: str, suggested: str) -> dict:
         """Save *text* via the native save dialog. ext like 'md','txt','html'."""
         try:
-            _out_dir = self._cfg.get("last_output_folder") or ""
-            _save_kw = {"directory": _out_dir} if (_out_dir and Path(_out_dir).is_dir()) else {}
             dest = self._window.create_file_dialog(
                 webview.FileDialog.SAVE, save_filename=suggested or f"output.{ext}",
-                **_save_kw,
+                **self._export_dir(),
             )
             if not dest:
                 return {"ok": False, "cancelled": True}
@@ -336,7 +344,8 @@ def _render(text: str, ext: str) -> str:
             import markdown as _md
             body = _md.markdown(text, extensions=["tables", "fenced_code"])
         except Exception:
-            body = "<pre>" + text + "</pre>"
+            import html as _html
+            body = "<pre>" + _html.escape(text) + "</pre>"
         return ("<!DOCTYPE html><html><head><meta charset='utf-8'>"
                 "<title>GRU953 Markdown export</title></head><body>"
                 + body + "</body></html>")

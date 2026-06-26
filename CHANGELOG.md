@@ -4,6 +4,20 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.2] — 2026-06-26
+
+### Fixed — export dialog directory fallback
+- `Api.export_text()` now uses the same Documents → home-dir fallback that `pick_files()` already uses via `_dialog_dir()`. Previously, if `last_output_folder` was empty or had been deleted, the SAVE dialog received no `directory` kwarg, which causes silent failure or an unexpected starting location on some WebView2 configurations. New helper `_export_dir()` provides the fallback.
+
+### Fixed — HTML export XSS guard in fallback path
+- `_render()` now calls `html.escape()` on the raw text before wrapping it in `<pre>` when the `markdown` library import fails. The previous code concatenated unescaped text directly into HTML — a defence-in-depth fix for an unlikely but theoretically unsafe path.
+
+### Removed — stale locale keys
+- Removed `"update.install"` (duplicate of `"update.download"`, never referenced in JS) from both `en.json` and `bn.json`.
+- Removed `"bijoy.detect.type"` (never referenced in JS) from both locale files.
+
+---
+
 ## [v4.10.1] — 2026-06-26
 
 ### Removed — dead API bridge methods
