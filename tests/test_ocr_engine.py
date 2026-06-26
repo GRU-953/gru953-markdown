@@ -163,3 +163,35 @@ class TestOcrPdf:
         with unittest.mock.patch.dict(sys.modules, {"pymupdf": None}):
             with pytest.raises(RuntimeError, match="pymupdf"):
                 ocr_pdf("/any/path.pdf")
+
+    def test_pdf_open_failure_raises_runtime(self, tmp_path):
+        f = tmp_path / "doc.pdf"
+        f.write_bytes(b"dummy")
+        fake_pymupdf = unittest.mock.MagicMock()
+        fake_pymupdf.open.side_effect = Exception("corrupt")
+        with unittest.mock.patch.dict(sys.modules, {"pymupdf": fake_pymupdf}):
+            with pytest.raises(RuntimeError, match="Could not open PDF"):
+                ocr_pdf(str(f))
+
+    def test_bad_page_skipped_returns_empty(self, tmp_path):
+        f = tmp_path / "doc.pdf"
+        f.write_bytes(b"dummy")
+
+        mock_pix = unittest.mock.MagicMock()
+        mock_pix.width = 1
+        mock_pix.height = 1
+        mock_pix.samples = b"\x00\x00\x00"
+
+        mock_page = unittest.mock.MagicMock()
+        mock_page.get_pixmap.return_value = mock_pix
+
+        mock_doc = unittest.mock.MagicMock()
+        mock_doc.__iter__ = unittest.mock.MagicMock(side_effect=lambda: iter([mock_page]))
+
+        fake_pymupdf = unittest.mock.MagicMock()
+        fake_pymupdf.open.return_value = mock_doc
+        with unittest.mock.patch.dict(sys.modules, {"pymupdf": fake_pymupdf}), \
+             unittest.mock.patch("pytesseract.image_to_string",
+                                  side_effect=ValueError("bad image")):
+            result = ocr_pdf(str(f))
+        assert result == ""

@@ -4,6 +4,17 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.42] — 2026-06-27
+
+### Tests — ocr_pdf open-failure and bad-page paths (219 total, up from 217)
+
+Added 2 tests to `TestOcrPdf` covering the remaining error paths in `ocr_pdf()`:
+
+- `test_pdf_open_failure_raises_runtime`: `pymupdf.open()` raises → caught at `except Exception as exc: raise RuntimeError(f"Could not open PDF: {exc}") from exc`
+- `test_bad_page_skipped_returns_empty`: per-page generic exception → `except Exception: pages_text.append("")` — bad page silently skipped, overall result is `""`
+
+---
+
 ## [v4.10.41] — 2026-06-27
 
 ### Tests — XLSX direct-extraction error paths (217 total, up from 215)
