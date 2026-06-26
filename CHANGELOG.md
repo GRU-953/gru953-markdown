@@ -4,6 +4,20 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.37] — 2026-06-27
+
+### Tests — Bijoy detection edge cases (210 total, up from 208)
+
+Filled two gaps in `test_bijoy.py` that exercise detection logic not previously covered by direct assertions:
+
+`TestDetectScript`:
+- `test_unicode_bengali_beats_bijoy_range_chars`: text with Bijoy-range chars (©©©) AND a Unicode Bengali codepoint (ক) → `"unicode_bn"` — verifies the `bn > 0` short-circuit always wins
+
+`TestIsBijoy`:
+- `test_bijoy_two_char_adaptive_true`: `is_bijoy("°©")` → `True` — verifies the adaptive `min_bj=2` threshold for short texts (sig ≤ 30) that the old fixed floor of 5 would have rejected
+
+---
+
 ## [v4.10.36] — 2026-06-27
 
 ### Tests — boundary and re-raise coverage (208 total, up from 203)

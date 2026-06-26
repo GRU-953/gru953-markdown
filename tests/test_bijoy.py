@@ -81,6 +81,11 @@ class TestDetectScript:
         # Regression guard: the relaxed 13× ratio for longer texts must NOT apply here.
         assert detect_script("© 2024 Company Name — Annual Report") == "latin"
 
+    def test_unicode_bengali_beats_bijoy_range_chars(self):
+        # Even with Bijoy-range chars present, any Unicode Bengali codepoint wins.
+        # bj=3 (©, ©, ©) + bn=1 (ক) → unicode_bn (bn > 0 short-circuits)
+        assert detect_script("©©©ক") == "unicode_bn"
+
 
 # ── is_bijoy ──────────────────────────────────────────────────────────────────
 
@@ -88,6 +93,10 @@ class TestIsBijoy:
     def test_bijoy_single_char_false(self):
         # A single Bijoy-range char is below the 5-char minimum; not enough to classify as Bijoy
         assert is_bijoy("°") is False
+
+    def test_bijoy_two_char_adaptive_true(self):
+        # bj=2, la=0, sig=2 ≤ 30 → adaptive min_bj=2 → True (old fixed floor of 5 rejected this)
+        assert is_bijoy("°©") is True
 
     def test_bijoy_five_chars_true(self):
         assert is_bijoy("°°°°°") is True
