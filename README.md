@@ -140,7 +140,7 @@ If the file uses a legacy Bangla font (Bijoy/SutonnyMJ), the Auto Bijoy setting 
 Yes. Drop as many files as you like into the drop area. They all convert together when you click Convert all.
 
 **Are there keyboard shortcuts?**
-A few useful ones: **Ctrl + Enter** converts all files. **Ctrl + O** opens the file browser. In the file list, **Arrow Up / Arrow Down** moves between files so you can preview each one without using the mouse.
+Yes: **Ctrl + Enter** converts all files. **Ctrl + O** opens the file browser. **Ctrl + S** exports the current file. **Ctrl + Shift + S** exports all converted files together. In the file list, **Arrow Up / Arrow Down** moves between files so you can preview each one without using the mouse.
 
 **Does the app send my files to the internet?**
 No. Everything happens entirely on your computer. Your files never leave your machine. The only internet access the app uses is to check for updates in the background, and that can be ignored entirely.

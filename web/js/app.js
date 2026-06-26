@@ -318,6 +318,8 @@ function wireConvert() {
     const isConvert = currentView === "convert";
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "o" && !e.shiftKey) { if (isConvert) { e.preventDefault(); addFiles(); } }
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { if (isConvert) { e.preventDefault(); convertAll(); } }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s" && !e.shiftKey) { if (isConvert) { e.preventDefault(); exportCurrent(); } }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s" && e.shiftKey) { if (isConvert) { e.preventDefault(); exportAll(); } }
     // Arrow-key navigation through the file list when focus is not in a text input
     if (isConvert && files.length && !e.ctrlKey && !e.metaKey && !e.altKey) {
       const tag = document.activeElement && document.activeElement.tagName;

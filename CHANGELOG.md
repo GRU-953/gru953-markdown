@@ -4,6 +4,13 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.23] — 2026-06-26
+
+### Added — keyboard shortcuts for export
+- **Ctrl + S** exports the currently selected file (opens the format picker). **Ctrl + Shift + S** exports all converted files as a single combined document. Both shortcuts are active only when the Convert view is open. The README FAQ has been updated to document all available shortcuts.
+
+---
+
 ## [v4.10.22] — 2026-06-26
 
 ### Fixed — export format modal covered by scrolled content
