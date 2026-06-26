@@ -1167,6 +1167,35 @@ class TestExtractLegacyDoc:
         # Zero-filled binary → scan finds no printable content → "" returned
         assert _extract_legacy_doc("x.doc") == ""
 
+    def test_cp0_at_end_boundary_falls_back_to_scan(self, monkeypatch):
+        """cp0 == len(data) fails '0 < cp0 < len(data)' (strict <) → text_start=None → fallback scan."""
+        import struct as _struct
+        binary = bytearray(512)
+        _struct.pack_into("<I", binary, 48, 20)    # cc_text = 20
+        _struct.pack_into("<I", binary, 134, 4)    # fc_chpx = 4 → cp0 from tdata[4:8]
+        for i in range(200, 220):
+            binary[i] = ord("F")                   # printable — fallback scan will find these
+        binary = bytes(binary)
+        tdata = bytearray(8)
+        _struct.pack_into("<I", tdata, 4, 512)     # cp0 = 512 = len(data) → 512 < 512 is False → scan
+        tdata = bytes(tdata)
+
+        class FakeStream:
+            def __init__(self, data): self._data = data
+            def read(self): return self._data
+
+        class FakeOleFileIO:
+            def __init__(self, path): pass
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+            def exists(self, name): return name in ("WordDocument", "0Table")
+            def openstream(self, name):
+                return FakeStream(binary if name == "WordDocument" else tdata)
+
+        fake_mod = type("olefile", (), {"OleFileIO": FakeOleFileIO})
+        monkeypatch.setitem(sys.modules, "olefile", fake_mod)
+        assert _extract_legacy_doc("x.doc") == "F" * 20
+
     def test_no_table_stream_fallback_scan_extracts_text(self, monkeypatch):
         """When no table stream exists, the fallback ASCII density scan locates printable text."""
         import struct as _struct
@@ -1374,6 +1403,23 @@ class TestDocxFontDetection:
             '<w:body><w:p><w:r>'
             '<w:rPr><w:rFonts w:ascii="Siyam  Rupali  ANSI"/></w:rPr>'
             '<w:t>test</w:t>'
+            '</w:r></w:p></w:body></w:document>'
+        )
+        with zipfile.ZipFile(str(docx_path), "w") as z:
+            z.writestr("word/document.xml", xml)
+        assert _docx_font_has_bijoy(str(docx_path)) is True
+
+    def test_bijoy_font_in_second_attrib_detected(self, tmp_path):
+        """w:rFonts w:ascii='Arial' w:hAnsi='SutonnyMJ' — loop checks all attrib.values();
+        first attr (Arial) is not Bijoy but second attr (SutonnyMJ) is → True."""
+        import zipfile
+        docx_path = tmp_path / "mixed_attrs.docx"
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+            '<w:body><w:p><w:r>'
+            '<w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="SutonnyMJ"/></w:rPr>'
+            '<w:t>evsjv</w:t>'
             '</w:r></w:p></w:body></w:document>'
         )
         with zipfile.ZipFile(str(docx_path), "w") as z:
@@ -1680,6 +1726,23 @@ class TestPptxFontDetection:
             z.writestr("ppt/slides/slide1.xml", xml)
         assert _pptx_font_has_bijoy(str(pptx_path)) is True
 
+    def test_empty_typeface_attr_skipped(self, tmp_path):
+        """typeface='' (attribute present but empty string) → not val is True → continue → False."""
+        import zipfile
+        pptx_path = tmp_path / "empty_typeface.pptx"
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"'
+            '       xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
+            '<p:spTree><p:sp><p:txBody><a:p><a:r>'
+            '<a:rPr><a:latin typeface=""/></a:rPr>'
+            '<a:t>text</a:t>'
+            '</a:r></a:p></p:txBody></p:sp></p:spTree></p:sld>'
+        )
+        with zipfile.ZipFile(str(pptx_path), "w") as z:
+            z.writestr("ppt/slides/slide1.xml", xml)
+        assert _pptx_font_has_bijoy(str(pptx_path)) is False
+
 
 # ── ODT font-name Bijoy detection ─────────────────────────────────────────────
 
@@ -1870,6 +1933,26 @@ class TestOdtFontDetection:
             '  xmlns:svg="http://www.w3.org/2000/svg">'
             '<office:font-face-decls>'
             '<style:font-face style:name="SutonnyMJ"/>'
+            '</office:font-face-decls>'
+            '</office:document-content>'
+        )
+        with zipfile.ZipFile(str(odt_path), "w") as z:
+            z.writestr("content.xml", xml)
+        assert _odt_font_has_bijoy(str(odt_path)) is False
+
+    def test_svg_font_family_empty_string_skips_element(self, tmp_path):
+        """svg:font-family='' (attribute PRESENT but empty) → val='' → if val: False → skipped → False.
+        Distinct from the absent-attr case: the attribute exists in the XML but is an empty string."""
+        import zipfile
+        odt_path = tmp_path / "empty_svg_attr.odt"
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<office:document-content'
+            '  xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"'
+            '  xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"'
+            '  xmlns:svg="http://www.w3.org/2000/svg">'
+            '<office:font-face-decls>'
+            '<style:font-face style:name="EmptyFont" svg:font-family=""/>'
             '</office:font-face-decls>'
             '</office:document-content>'
         )

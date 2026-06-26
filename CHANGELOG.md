@@ -4,6 +4,19 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.69] — 2026-06-27
+
+### Tests — attribute-guard and cp0 boundary branches (335 total, up from 331)
+
+Four new tests covering previously untested attribute-guard and boundary paths:
+
+- `TestPptxFontDetection` (1): `typeface=""` (attribute present but empty) — `not val` guard fires → element skipped → `False`; distinct from the `+` theme-font-ref case
+- `TestDocxFontDetection` (1): `w:rFonts w:ascii="Arial" w:hAnsi="SutonnyMJ"` — loop over all `attrib.values()` continues past non-Bijoy first attr, finds Bijoy in second → `True`
+- `TestExtractLegacyDoc` (1): `cp0 = 512 = len(data)` — fails the strict `0 < cp0 < len(data)` (boundary value, not `<=`) → `text_start` stays `None` → fallback scan used
+- `TestOdtFontDetection` (1): `svg:font-family=""` (attribute present in XML but empty string) — `if val:` guard → `False`; distinct from the absent-attribute case
+
+---
+
 ## [v4.10.68] — 2026-06-27
 
 ### Fix — macOS resource-fork sidecar files no longer crash the pipeline (331 tests)
