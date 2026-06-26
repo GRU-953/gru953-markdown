@@ -4,6 +4,16 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.21] — 2026-06-26
+
+### Added — re-add file from History to the conversion queue
+- Each item in the History view now shows a **+** button when hovered or focused. Clicking it calls `add_dropped()` to validate the path, adds the file to the Convert queue, and switches to the Convert view with a confirmation toast. If the original file no longer exists, an error toast is shown instead. Works in both English and বাংলা.
+
+### Fixed — export format dialog: Tab key now stays inside the modal
+- When the "Export format" modal was open (MD / HTML / TXT), pressing Tab moved focus outside the dialog to other page elements. Focus now cycles between the three format buttons. Shift+Tab also works. Escape still closes the dialog.
+
+---
+
 ## [v4.10.20] — 2026-06-26
 
 ### Fixed — RTF "no text" status was never reported

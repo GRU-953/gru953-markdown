@@ -75,6 +75,8 @@
   "history.count.many": "{count}টি রূপান্তর",
   "history.clear": "ইতিহাস মুছে ফেলুন",
   "history.failed": "ব্যর্থ",
+  "history.readd": "তালিকায় যুক্ত করুন",
+  "history.added": "ফাইল তালিকায় যুক্ত হয়েছে",
 
   "settings.lang.title": "ভাষা",
   "settings.lang.desc": "ইন্টারফেসের ভাষা বেছে নিন।",

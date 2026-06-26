@@ -75,6 +75,8 @@
   "history.count.many": "{count} conversions",
   "history.clear": "Clear history",
   "history.failed": "failed",
+  "history.readd": "Add to queue",
+  "history.added": "File added to queue",
 
   "settings.lang.title": "Language",
   "settings.lang.desc": "Choose the interface language.",

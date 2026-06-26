@@ -592,6 +592,22 @@ async function runBijoy() {
 /* ── History view ─────────────────────────────────────────────────────────── */
 function wireHistory() {
   $("hist-clear").addEventListener("click", async () => { await api().clear_history(); renderHistory(); });
+  $("hist-list").addEventListener("click", async (e) => {
+    const btn = e.target.closest(".hist-readd");
+    if (!btn || !btn.dataset.histPath) return;
+    try {
+      const metas = await api().add_dropped([btn.dataset.histPath]);
+      if (metas && metas.length) {
+        addMetas(metas);
+        switchView("convert");
+        toast(t("history.added"), "ok");
+      } else {
+        toast(t("error.fileNotFound"), "err");
+      }
+    } catch (err) {
+      toast(t("error.generic"), "err");
+    }
+  });
 }
 async function renderHistory() {
   const items = await api().get_history();
@@ -600,10 +616,14 @@ async function renderHistory() {
     : t("history.count.none");
   $("hist-list").innerHTML = items.map(h => {
     const steps = (h.steps || []).map(s => `<span class="badge">${esc(stepLabel(s))}</span>`).join("");
+    const readdBtn = h.path
+      ? `<button class="hist-readd" data-hist-path="${esc(h.path)}" title="${esc(t("history.readd"))}" aria-label="${esc(t("history.readd"))}: ${esc(h.name)}"><i class="ti ti-plus" aria-hidden="true"></i></button>`
+      : "";
     return `<div class="hist-item">
       <div class="hicon ${h.ok ? "ok" : "err"}"><i class="ti ${h.ok ? "ti-check" : "ti-x"}"></i></div>
       <div class="hmeta"><div class="hname">${esc(h.name)}</div>
         <div class="hsub">${esc(h.ts || "")} ${h.ok ? steps : esc(h.error || t("history.failed"))}</div></div>
+      ${readdBtn}
     </div>`;
   }).join("");
 }
@@ -680,7 +700,18 @@ async function pickFormat() {
       resolve(val); wrap.remove();
       document.removeEventListener("keydown", onKey);
     };
-    const onKey = (e) => { if (e.key === "Escape") dismiss(null); };
+    const onKey = (e) => {
+      if (e.key === "Escape") { dismiss(null); return; }
+      if (e.key === "Tab") {
+        e.preventDefault();
+        const btns = Array.from(wrap.querySelectorAll("button"));
+        const idx = btns.indexOf(document.activeElement);
+        const next = e.shiftKey
+          ? (idx <= 0 ? btns.length - 1 : idx - 1)
+          : (idx >= btns.length - 1 ? 0 : idx + 1);
+        if (btns[next]) btns[next].focus();
+      }
+    };
     document.addEventListener("keydown", onKey);
     wrap.addEventListener("click", e => {
       if (e.target.dataset.f) dismiss(e.target.dataset.f);
