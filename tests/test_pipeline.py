@@ -196,6 +196,21 @@ class TestBijoyStep:
         assert out["text"] == ""
         assert called == []   # is_bijoy never consulted on empty text
 
+    def test_needs_bijoy_true_skips_docx_font_detection(self, tmp_path, monkeypatch):
+        """When is_bijoy_func returns True, not needs_bijoy is False → _docx_font_has_bijoy never called."""
+        f = _touch(tmp_path, "doc.docx")
+        detection_called = []
+        monkeypatch.setattr(pipeline, "_docx_font_has_bijoy",
+                            lambda p: detection_called.append(p) or False)
+        convert_file(
+            str(f),
+            markitdown=FakeMarkItDown("some text"),
+            auto_bijoy=True,
+            is_bijoy_func=lambda t: True,
+            bijoy_func=lambda t: t,
+        )
+        assert not detection_called  # short-circuit: needs_bijoy already True
+
 
 # ── errors / lazy markitdown ──────────────────────────────────────────────────
 
@@ -1276,6 +1291,12 @@ class TestRtfFontDetection:
         rtf = r'{\fonttbl}'
         assert _rtf_font_has_bijoy(rtf) is False
 
+    def test_all_segments_empty_after_strip_returns_false(self):
+        """fonttbl whose every segment produces an empty name after stripping → all skipped via 'if not name: continue' → False."""
+        # {\f0;\f1;} — only control words, no font name text; after re.sub + strip each seg is ""
+        rtf = r'{\fonttbl{\f0;\f1;}}'
+        assert _rtf_font_has_bijoy(rtf) is False
+
     def test_internal_whitespace_collapsed_in_font_name(self):
         """Font name with double internal spaces collapsed by _WS_RE → match found → True."""
         rtf = r'{\fonttbl{\f0\fnil  Siyam  Rupali  ANSI;}}'
@@ -1692,3 +1713,43 @@ class TestOdtFontDetection:
         with zipfile.ZipFile(str(odt_path), "w") as z:
             z.writestr("content.xml", xml)
         assert _odt_font_has_bijoy(str(odt_path)) is True
+
+    def test_svg_font_family_absent_skips_element(self, tmp_path):
+        """style:font-face with NO svg:font-family attribute → val='' → if val: False → element skipped → False."""
+        import zipfile
+        odt_path = tmp_path / "no_svg_attr.odt"
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<office:document-content'
+            '  xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"'
+            '  xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"'
+            '  xmlns:svg="http://www.w3.org/2000/svg">'
+            '<office:font-face-decls>'
+            '<style:font-face style:name="SutonnyMJ"/>'
+            '</office:font-face-decls>'
+            '</office:document-content>'
+        )
+        with zipfile.ZipFile(str(odt_path), "w") as z:
+            z.writestr("content.xml", xml)
+        assert _odt_font_has_bijoy(str(odt_path)) is False
+
+    def test_fo_font_name_absent_skips_element(self, tmp_path):
+        """style:text-properties with NO fo:font-name attribute → val='' → if val: False → element skipped → False."""
+        import zipfile
+        odt_path = tmp_path / "no_fo_attr.odt"
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<office:document-content'
+            '  xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"'
+            '  xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"'
+            '  xmlns:fo="http://www.w3.org/1999/XSL/Format">'
+            '<office:automatic-styles>'
+            '<style:style style:name="T1" style:family="text">'
+            '<style:text-properties style:font-size-asian="12pt"/>'
+            '</style:style>'
+            '</office:automatic-styles>'
+            '</office:document-content>'
+        )
+        with zipfile.ZipFile(str(odt_path), "w") as z:
+            z.writestr("content.xml", xml)
+        assert _odt_font_has_bijoy(str(odt_path)) is False

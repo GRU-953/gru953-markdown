@@ -4,6 +4,17 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.63] — 2026-06-27
+
+### Tests — RTF empty segments, ODT absent attributes, needs_bijoy short-circuit (305 total, up from 301)
+
+- `TestRtfFontDetection.test_all_segments_empty_after_strip_returns_false`: fonttbl with control-word-only entries; every segment produces an empty name after `re.sub` + strip → all skipped via `if not name: continue` → False
+- `TestOdtFontDetection.test_svg_font_family_absent_skips_element`: `<style:font-face>` with no `svg:font-family` attribute → `elem.get(..., "")` returns `""` → `if val:` is False → element skipped → False
+- `TestOdtFontDetection.test_fo_font_name_absent_skips_element`: `<style:text-properties>` with no `fo:font-name` attribute → same guard fires → element skipped → False
+- `TestBijoyStep.test_needs_bijoy_true_skips_docx_font_detection`: when `is_bijoy_func` returns True, `needs_bijoy = True` → `not needs_bijoy and suffix in docx_exts` is False → `_docx_font_has_bijoy` never called; verified with a sentinel mock
+
+---
+
 ## [v4.10.62] — 2026-06-27
 
 ### Tests — 0Table flag, cp0 zero fallback, AI-kar pre-kar else branch, Cyrillic other, all-pages-fail OCR (301 total, up from 296)
