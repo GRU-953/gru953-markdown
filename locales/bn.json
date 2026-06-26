@@ -32,6 +32,10 @@
   "update.message": "নতুন একটি সংস্করণ পাওয়া গেছে।",
   "update.available": "হালনাগাদ পাওয়া গেছে: {version}",
   "update.download": "ডাউনলোড",
+  "update.install": "ডাউনলোড ও ইনস্টল করুন",
+  "update.downloading": "হালনাগাদ ডাউনলোড হচ্ছে…",
+  "update.starting": "ইনস্টলার চালু হচ্ছে — অ্যাপটি বন্ধ হয়ে যাবে।",
+  "update.failed": "হালনাগাদ ডাউনলোড করা যায়নি। তার বদলে ডাউনলোড পৃষ্ঠা খোলা হচ্ছে।",
   "update.dismiss": "বন্ধ করুন",
 
   "convert.files.title": "ফাইল",
@@ -56,6 +60,7 @@
   "convert.result.converted": "{count}টি রূপান্তরিত",
   "convert.result.empty": "{count}টি খালি",
   "convert.result.failed": "{count}টি ব্যর্থ",
+  "convert.removeFile": "ফাইল সরান",
 
   "ocr.dropzone.main": "এখানে একটি ছবি বা PDF ছেড়ে দিন, কিংবা ক্লিক করে বেছে নিন।",
   "ocr.dropzone.formats": "PNG · JPG · TIFF · BMP · WEBP · PDF",

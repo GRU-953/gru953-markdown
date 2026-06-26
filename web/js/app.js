@@ -10,6 +10,7 @@ let ocrName = "";
 let outMode = "preview"; // preview | edit
 let LOCALES = {};        // { en: {...}, bn: {...} }
 let lang = "en";         // active UI language
+let _updateInfo = null;  // cached update info for banner re-render on lang switch
 const $ = (id) => document.getElementById(id);
 const api = () => window.pywebview.api;
 
@@ -49,6 +50,7 @@ function applyLang() {
   refreshOcrLabel();
   refreshDetectPill();
   populateAbout();
+  renderUpdateBanner();
   const histView = $("view-history");
   if (histView && histView.classList.contains("active")) renderHistory();
 }
@@ -94,17 +96,45 @@ function showOnboarding() {
   });
 }
 
+function renderUpdateBanner() {
+  if (!_updateInfo || !_updateInfo.has_update) return;
+  const info = _updateInfo;
+  $("update-msg").textContent = t("update.available", { version: info.latest });
+  const link = $("update-link");
+  link.href = info.url || "#";
+  if (info.installer) {
+    link.textContent = t("update.install");
+    link.onclick = (e) => { e.preventDefault(); doUpdate(info.installer, info.url); };
+  } else {
+    link.textContent = t("update.download");
+    link.onclick = (e) => { e.preventDefault(); if (info.url) window.open(info.url); };
+  }
+}
 async function checkForUpdate() {
   try {
     const info = await api().check_update();
     if (!info || !info.has_update) return;
-    const banner = $("update-banner");
-    $("update-msg").textContent = t("update.available", { version: info.latest });
-    const link = $("update-link");
-    link.href = info.url;
-    link.onclick = (e) => { e.preventDefault(); window.open(info.url); };
-    banner.style.display = "flex";
+    _updateInfo = info;
+    renderUpdateBanner();
+    $("update-banner").style.display = "flex";
   } catch (e) {}
+}
+async function doUpdate(installerUrl, pageUrl) {
+  const msg = $("update-msg");
+  msg.textContent = t("update.downloading");
+  try {
+    const res = await api().install_update(installerUrl);
+    if (res && res.ok) {
+      msg.textContent = t("update.starting");
+      setTimeout(() => { try { api().quit_app(); } catch (e) {} }, 1500);
+    } else {
+      msg.textContent = t("update.failed");
+      if (pageUrl) setTimeout(() => window.open(pageUrl), 800);
+    }
+  } catch (e) {
+    msg.textContent = t("update.failed");
+    if (pageUrl) setTimeout(() => window.open(pageUrl), 800);
+  }
 }
 
 /* ── Offline awareness ──────────────────────────────────────────────────────── */
@@ -228,7 +258,7 @@ function wireConvert() {
   });
   document.addEventListener("keydown", (e) => {
     const isConvert = currentView === "convert";
-    if ((e.ctrlKey || e.metaKey) && e.key === "o" && !e.shiftKey) { if (isConvert) { e.preventDefault(); addFiles(); } }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "o" && !e.shiftKey) { if (isConvert) { e.preventDefault(); addFiles(); } }
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { if (isConvert) { e.preventDefault(); convertAll(); } }
   });
 }
@@ -318,7 +348,7 @@ function renderFiles() {
          ${f.status === "doing" ? '<div class="progress-track" role="progressbar"><div class="progress-bar" style="width:65%"></div></div>' : ""}
        </div>
        <i class="ti ${STAT_ICON[f.status]} fstat ${f.status}" aria-hidden="true"></i>
-       <button class="fx" data-x="${i}" aria-label="Remove"><i class="ti ti-x"></i></button>`;
+       <button class="fx" data-x="${i}" aria-label="${esc(t('convert.removeFile'))}"><i class="ti ti-x"></i></button>`;
     row.addEventListener("click", (e) => { if (!e.target.closest(".fx")) selectFile(i); });
     row.querySelector(".fx").addEventListener("click", () => removeFile(i));
     setupRowDrag(row, i);
@@ -411,7 +441,7 @@ function wireOcr() {
 }
 async function pickOcr() {
   try { const m = await api().pick_scan_file(); if (m && m.path) setOcr(m); }
-  catch (e) {}
+  catch (e) { toast(t("toast.pickerFailed"), "err"); }
 }
 function setOcr(m) {
   ocrPath = m.path; ocrName = m.name;

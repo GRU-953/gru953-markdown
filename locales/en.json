@@ -32,6 +32,10 @@
   "update.message": "A new version is available.",
   "update.available": "Update available: {version}",
   "update.download": "Download",
+  "update.install": "Download & install",
+  "update.downloading": "Downloading update…",
+  "update.starting": "Starting installer — the app will close.",
+  "update.failed": "Couldn't download the update. Opening the download page instead.",
   "update.dismiss": "Dismiss",
 
   "convert.files.title": "Files",
@@ -56,6 +60,7 @@
   "convert.result.converted": "{count} converted",
   "convert.result.empty": "{count} empty",
   "convert.result.failed": "{count} failed",
+  "convert.removeFile": "Remove file",
 
   "ocr.dropzone.main": "Drop an image or PDF here, or click to browse",
   "ocr.dropzone.formats": "PNG · JPG · TIFF · BMP · WEBP · PDF",

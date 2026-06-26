@@ -50,6 +50,10 @@ html[data-lang="bn"] body { font-family: var(--font-bn); }
   margin-bottom: var(--space-3);
 }
 .brand-logo { width: 44px; height: 44px; display: block; }
+/* Theme-adaptive logo: Teal-solid in light, Indigo & amber in dark. */
+.brand-logo.logo-dark { display: none; }
+[data-mode="dark"] .brand-logo.logo-light { display: none; }
+[data-mode="dark"] .brand-logo.logo-dark { display: block; }
 
 .nav-btn {
   width: 48px; height: 48px; flex-shrink: 0;
@@ -238,7 +242,7 @@ html[data-lang="bn"] body { font-family: var(--font-bn); }
 .dropzone {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: var(--space-1);
-  width: 100%; margin: var(--space-3); margin-bottom: 0;
+  align-self: stretch; margin: var(--space-3); margin-bottom: 0;
   font-family: inherit; font-size: 16px; text-align: center;
   color: var(--text-muted); cursor: pointer;
   background: transparent;
@@ -551,7 +555,6 @@ html[data-lang="bn"] body { font-family: var(--font-bn); }
   display: flex; flex-direction: column; align-items: center; gap: var(--space-3);
 }
 .onboard-logo {
-  width: 52px; height: 52px; border-radius: var(--radius-lg);
   display: flex; align-items: center; justify-content: center;
 }
 .onboard-logo svg { width: 56px; height: 56px; }

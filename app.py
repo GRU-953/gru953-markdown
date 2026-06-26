@@ -36,7 +36,7 @@ from bijoy_unicode import convert_bijoy_to_unicode, detect_script
 from ocr_engine import ocr_image, ocr_pdf, tesseract_available, pymupdf_available
 from pipeline import convert_file, is_image, is_pdf, is_legacy_doc
 
-APP_VERSION = "v4.8.0"
+APP_VERSION = "v4.8.1"
 MAX_FILE_BYTES = 200 * 1024 * 1024  # 200 MB hard limit
 _RELEASES_API = "https://api.github.com/repos/GRU-953/gru953-markdown/releases/latest"
 
@@ -119,16 +119,27 @@ class Api:
             "*.json;*.xml;*.zip;*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.tif;*.tiff;*.webp;*.wav;*.mp3)",
             "All files (*.*)",
         )
-        init_dir = self._cfg.get("last_input_folder") or ""
         result = self._window.create_file_dialog(
             webview.FileDialog.OPEN, allow_multiple=True, file_types=types,
-            directory=init_dir,
+            **self._dialog_dir(),
         )
         if result:
             folder = str(Path(result[0]).parent)
             self._cfg["last_input_folder"] = folder
             _settings.save(self._cfg)
         return [self._meta(p) for p in (result or [])]
+
+    def _dialog_dir(self) -> dict:
+        """Return a {directory: ...} kwarg only when a real saved folder exists.
+
+        Passing an empty string for ``directory`` can make the WebView2 file
+        dialog fail to open in the bundled app, so we omit it entirely until a
+        valid last-used folder has been recorded.
+        """
+        init_dir = self._cfg.get("last_input_folder") or ""
+        if init_dir and Path(init_dir).is_dir():
+            return {"directory": init_dir}
+        return {}
 
     def pick_image(self) -> dict:
         types = ("Images (*.png;*.jpg;*.jpeg;*.bmp;*.tiff;*.gif;*.webp)",
@@ -146,10 +157,9 @@ class Api:
             "Images & PDFs (*.png;*.jpg;*.jpeg;*.bmp;*.tiff;*.gif;*.webp;*.pdf)",
             "All files (*.*)",
         )
-        init_dir = self._cfg.get("last_input_folder") or ""
         result = self._window.create_file_dialog(
             webview.FileDialog.OPEN, allow_multiple=False, file_types=types,
-            directory=init_dir,
+            **self._dialog_dir(),
         )
         if result:
             folder = str(Path(result[0]).parent)
@@ -241,10 +251,11 @@ class Api:
     def export_text(self, text: str, ext: str, suggested: str) -> dict:
         """Save *text* via the native save dialog. ext like 'md','txt','html'."""
         try:
-            init = self._cfg.get("last_output_folder") or None
+            _out_dir = self._cfg.get("last_output_folder") or ""
+            _save_kw = {"directory": _out_dir} if (_out_dir and Path(_out_dir).is_dir()) else {}
             dest = self._window.create_file_dialog(
-                webview.FileDialog.SAVE, directory=init or "",
-                save_filename=suggested or f"output.{ext}",
+                webview.FileDialog.SAVE, save_filename=suggested or f"output.{ext}",
+                **_save_kw,
             )
             if not dest:
                 return {"ok": False, "cancelled": True}
@@ -280,7 +291,12 @@ class Api:
         return APP_VERSION
 
     def check_update(self) -> dict:
-        """Query GitHub for the latest release. Returns {latest, url, has_update}."""
+        """Query GitHub for the latest release.
+
+        Returns {latest, url, installer, has_update}. ``installer`` is the direct
+        download URL of the Setup installer asset (falls back to the portable exe),
+        so the frontend can offer one-click download-and-install.
+        """
         try:
             req = urllib.request.Request(
                 _RELEASES_API,
@@ -291,10 +307,54 @@ class Api:
                 data = _json.loads(resp.read().decode())
             latest = data.get("tag_name", APP_VERSION)
             url = data.get("html_url", "")
-            return {"latest": latest, "url": url,
+            assets = data.get("assets", []) or []
+            installer = ""
+            for a in assets:                              # prefer the guided installer
+                if a.get("name", "").lower().endswith("setup.exe"):
+                    installer = a.get("browser_download_url", "")
+                    break
+            if not installer:                             # fall back to the portable exe
+                for a in assets:
+                    if a.get("name", "").lower().endswith(".exe"):
+                        installer = a.get("browser_download_url", "")
+                        break
+            return {"latest": latest, "url": url, "installer": installer,
                     "has_update": latest != APP_VERSION}
         except Exception:
-            return {"latest": APP_VERSION, "url": "", "has_update": False}
+            return {"latest": APP_VERSION, "url": "", "installer": "",
+                    "has_update": False}
+
+    def install_update(self, asset_url: str) -> dict:
+        """Download the installer to a temp file and launch it.
+
+        On success the frontend should tell the user and call ``quit_app()`` so the
+        installer can replace the running app. Only https github.com /
+        *.githubusercontent.com asset URLs are accepted.
+        """
+        try:
+            if not asset_url or not asset_url.lower().startswith("https://"):
+                return {"ok": False, "error": "No valid installer URL."}
+            import urllib.parse, tempfile, shutil
+            _host = urllib.parse.urlparse(asset_url).netloc.lower()
+            if _host != "github.com" and not _host.endswith(".githubusercontent.com"):
+                return {"ok": False, "error": "Installer URL must be from github.com or githubusercontent.com."}
+            dest = Path(tempfile.gettempdir()) / "GRU953Markdown-Setup.exe"
+            req = urllib.request.Request(
+                asset_url, headers={"User-Agent": f"GRU953Markdown/{APP_VERSION}"})
+            with urllib.request.urlopen(req, timeout=120) as resp, open(dest, "wb") as f:
+                shutil.copyfileobj(resp, f)
+            os.startfile(str(dest))   # launch installer (Windows)
+            return {"ok": True, "path": str(dest)}
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)}
+
+    def quit_app(self) -> None:
+        """Close the window so a launched installer can complete."""
+        try:
+            if self._window:
+                self._window.destroy()
+        except Exception:
+            pass
 
 
 def _render(text: str, ext: str) -> str:
