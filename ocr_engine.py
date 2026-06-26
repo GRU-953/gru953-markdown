@@ -107,6 +107,7 @@ def ocr_pdf(pdf_path: str, language: str = "English", dpi: int = 200) -> str:
         for page in doc:
             pix = page.get_pixmap(matrix=mat, colorspace=pymupdf.csRGB)
             img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+            pix = None  # release pixmap before Tesseract allocates its own buffers
             try:
                 text = pytesseract.image_to_string(img, lang=lang_code)
                 pages_text.append(text.strip())
@@ -114,8 +115,8 @@ def ocr_pdf(pdf_path: str, language: str = "English", dpi: int = 200) -> str:
                 raise RuntimeError(
                     "Tesseract not found. Install from https://github.com/UB-Mannheim/tesseract/wiki"
                 )
-            except Exception as exc:
-                raise RuntimeError(f"OCR failed on page {page.number + 1}: {exc}") from exc
+            except Exception:
+                pages_text.append("")  # one bad page — keep going, don't abort the PDF
     finally:
         doc.close()
     return "\n\n".join(p for p in pages_text if p)

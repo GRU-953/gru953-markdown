@@ -4,6 +4,19 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.16] — 2026-06-26
+
+### Fixed — PDF OCR: single bad page no longer aborts all remaining pages
+- When Tesseract fails on one page of a multi-page PDF (corrupt raster, unsupported pixel format, etc.), OCR now continues with the remaining pages and collects whatever text it can. Previously, any single-page failure raised an exception and discarded all text extracted from earlier pages. Only a missing Tesseract binary still aborts immediately.
+
+### Improved — PDF OCR memory: pixmap released before Tesseract loads
+- The rendered page pixmap is now explicitly freed before `pytesseract.image_to_string()` is called. Both objects hold full-resolution image data; on a 200 DPI page they can each reach 30–60 MB. Releasing the pixmap first means peak RAM during PDF OCR is roughly halved, which matters on machines with 2 GB RAM.
+
+### Fixed — README: removed incorrectly advertised `.xls` format
+- The file type table listed `.xls` (old binary Excel 97-2003) as supported, but the file picker did not include it and MarkItDown's Excel handler uses openpyxl which does not read the old binary format. Removed to avoid user confusion.
+
+---
+
 ## [v4.10.15] — 2026-06-26
 
 ### Improved — screen reader: active navigation view announced

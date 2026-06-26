@@ -68,7 +68,7 @@ Drop any of these in and get clean, readable text out:
 | Word documents | `.docx`, `.doc` |
 | PDF files | `.pdf` |
 | PowerPoint presentations | `.pptx` |
-| Excel spreadsheets | `.xlsx`, `.xls` |
+| Excel spreadsheets | `.xlsx` |
 | Photos and scanned pages | `.png`, `.jpg`, `.jpeg`, `.tiff`, `.bmp`, `.gif`, `.webp` |
 | Web pages saved as files | `.html` |
 | Data files | `.csv`, `.json`, `.xml` |
