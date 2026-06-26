@@ -4,6 +4,16 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.58] — 2026-06-27
+
+### Tests — 3 pipeline branch tests (288 total, up from 285)
+
+- `TestReadPlainTextEncoding.test_plain_utf8_no_bom`: plain UTF-8 file without BOM decoded correctly by `utf-8-sig` (which treats it identically to `utf-8`)
+- `TestDocumentConversion.test_pdf_ocr_also_empty_no_pdf_empty_step`: when MarkItDown returns empty and OCR also returns empty, `steps=["pdf_ocr"]` and `pdf_empty` is NOT appended (the `"pdf_ocr" not in steps` guard at pipeline.py:505)
+- `TestRtf.test_rtf_read_bytes_exception_falls_back_to_markitdown`: when `p.read_bytes()` raises during RTF raw-byte read, `_rtf_raw=""` (the `except Exception` at pipeline.py:528) and MarkItDown fallback still recovers text
+
+---
+
 ## [v4.10.57] — 2026-06-27
 
 ### Tests — _rearrange halant-guard branches (285 total, up from 283)

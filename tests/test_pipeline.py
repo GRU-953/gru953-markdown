@@ -90,6 +90,15 @@ class TestDocumentConversion:
         assert "markitdown" in out["steps"]
         assert "pdf_empty" in out["steps"]
 
+    def test_pdf_ocr_also_empty_no_pdf_empty_step(self, tmp_path):
+        """When MarkItDown returns empty AND OCR also returns empty, steps=['pdf_ocr'] with no pdf_empty."""
+        f = _touch(tmp_path, "blank_scan.pdf")
+        md = FakeMarkItDown(None)
+        out = convert_file(f, markitdown=md, auto_ocr=True, ocr_pdf_func=lambda p, l: "")
+        assert out["steps"] == ["pdf_ocr"]
+        assert "pdf_empty" not in out["steps"]
+        assert out["text"] == ""
+
     def test_pdf_ocr_fallback_when_markitdown_empty(self, tmp_path):
         f = _touch(tmp_path, "scan.pdf")
         md = FakeMarkItDown(None)
@@ -417,6 +426,16 @@ class TestRtf:
         assert "rtf" in out["steps"]
         assert out["text"] == "recovered text"
 
+    def test_rtf_read_bytes_exception_falls_back_to_markitdown(self, tmp_path, monkeypatch):
+        """When p.read_bytes() raises reading RTF raw bytes, _rtf_raw='' and MarkItDown is used."""
+        f = tmp_path / "locked.rtf"
+        f.write_bytes(b"dummy")
+        monkeypatch.setattr(pipeline.Path, "read_bytes", lambda self: (_ for _ in ()).throw(OSError("locked")))
+        md = FakeMarkItDown("recovered via markitdown")
+        out = convert_file(str(f), markitdown=md, auto_bijoy=False)
+        assert "rtf" in out["steps"]
+        assert out["text"] == "recovered via markitdown"
+
     def test_rtf_both_paths_fail_yields_rtf_empty(self, tmp_path, monkeypatch):
         """When both _rtf_to_text and MarkItDown fail, 'rtf_empty' appears in steps."""
         f = tmp_path / "unreadable.rtf"
@@ -567,6 +586,13 @@ class TestReadPlainTextEncoding:
         text = _read_plain_text(str(f))
         assert "Hello" in text
         assert "World" in text
+
+    def test_plain_utf8_no_bom(self, tmp_path):
+        """Plain UTF-8 without BOM decoded correctly — utf-8-sig handles it the same as utf-8."""
+        f = tmp_path / "plain.txt"
+        f.write_bytes("Hello Unicode".encode("utf-8"))
+        text = _read_plain_text(str(f))
+        assert text == "Hello Unicode"
 
 
 # ── rtf_empty step ────────────────────────────────────────────────────────────
