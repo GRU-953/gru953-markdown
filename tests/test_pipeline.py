@@ -1182,6 +1182,32 @@ class TestExtractLegacyDoc:
         monkeypatch.setitem(sys.modules, "olefile", fake_mod)
         assert _extract_legacy_doc("x.doc") == "B" * 20
 
+    def test_fib_end_too_large_skips_cswNew_read(self, monkeypatch):
+        """cbRgFcLcb=60 pushes fib_end=518 > 512-2=510 → 'if fib_end+2<=len(data)' guard fails
+        → cswNew is NOT read; scan range is empty → text_start overflows data → return ''."""
+        import struct as _struct
+        # 512-byte stream; csw=cslw=0 → fib_rgfclcb_start=38; cbRgFcLcb at offset 36 = 60
+        # fib_end = 38 + 60*8 = 518 > 510 → guard fails → cswNew skipped
+        binary = bytearray(512)
+        _struct.pack_into("<I", binary, 48, 10)    # cc_text = 10 (valid: 0 < 10 <= 512)
+        _struct.pack_into("<H", binary, 36, 60)    # cbRgFcLcb = 60 → fib_end = 38+480 = 518
+        binary = bytes(binary)
+
+        class FakeStream:
+            def __init__(self, data): self._data = data
+            def read(self): return self._data
+
+        class FakeOleFileIO:
+            def __init__(self, path): pass
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+            def exists(self, name): return name == "WordDocument"
+            def openstream(self, name): return FakeStream(binary)
+
+        fake_mod = type("olefile", (), {"OleFileIO": FakeOleFileIO})
+        monkeypatch.setitem(sys.modules, "olefile", fake_mod)
+        assert _extract_legacy_doc("x.doc") == ""
+
 
 # ── DOCX font-name Bijoy detection ───────────────────────────────────────────
 
@@ -1628,6 +1654,23 @@ class TestPptxFontDetection:
             z.writestr("mimetype", "placeholder")
         assert _pptx_font_has_bijoy(str(pptx_path)) is False
 
+    def test_internal_whitespace_collapsed_in_typeface(self, tmp_path):
+        """typeface='Siyam  Rupali  ANSI' with double spaces → _WS_RE collapses → match found → True."""
+        import zipfile
+        pptx_path = tmp_path / "dbl_space.pptx"
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"'
+            '       xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
+            '<p:spTree><p:sp><p:txBody><a:p><a:r>'
+            '<a:rPr><a:latin typeface="Siyam  Rupali  ANSI"/></a:rPr>'
+            '<a:t>evsjv</a:t>'
+            '</a:r></a:p></p:txBody></p:sp></p:spTree></p:sld>'
+        )
+        with zipfile.ZipFile(str(pptx_path), "w") as z:
+            z.writestr("ppt/slides/slide1.xml", xml)
+        assert _pptx_font_has_bijoy(str(pptx_path)) is True
+
 
 # ── ODT font-name Bijoy detection ─────────────────────────────────────────────
 
@@ -1846,6 +1889,25 @@ class TestOdtFontDetection:
             z.writestr("content.xml", xml)
         assert _odt_font_has_bijoy(str(odt_path)) is False
 
+    def test_internal_whitespace_collapsed_in_svg_font_family(self, tmp_path):
+        """svg:font-family='Siyam  Rupali  ANSI' with double spaces → _WS_RE collapses → match → True."""
+        import zipfile
+        odt_path = tmp_path / "dbl_space.odt"
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<office:document-content'
+            '  xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"'
+            '  xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"'
+            '  xmlns:svg="http://www.w3.org/2000/svg">'
+            '<office:font-face-decls>'
+            '<style:font-face style:name="SRupali" svg:font-family="Siyam  Rupali  ANSI"/>'
+            '</office:font-face-decls>'
+            '</office:document-content>'
+        )
+        with zipfile.ZipFile(str(odt_path), "w") as z:
+            z.writestr("content.xml", xml)
+        assert _odt_font_has_bijoy(str(odt_path)) is True
+
 
 # ── XLSX font-name Bijoy detection ───────────────────────────────────────────
 
@@ -1923,3 +1985,21 @@ class TestXlsxFontDetection:
         )
         assert "bijoy" in out["steps"]
         assert out["text"] == "বাংলা"
+
+    def test_internal_whitespace_collapsed_in_name_val(self, tmp_path):
+        """<name val='Siyam  Rupali  ANSI'/> with double spaces → _WS_RE collapses → match → True."""
+        import zipfile
+        xlsx_path = tmp_path / "dbl_space.xlsx"
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            f'<styleSheet xmlns="{self._SS_NS}">'
+            '<fonts count="1">'
+            '<font>'
+            '<name val="Siyam  Rupali  ANSI"/>'
+            '</font>'
+            '</fonts>'
+            '</styleSheet>'
+        )
+        with zipfile.ZipFile(str(xlsx_path), "w") as z:
+            z.writestr("xl/styles.xml", xml)
+        assert _xlsx_font_has_bijoy(str(xlsx_path)) is True

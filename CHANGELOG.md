@@ -4,6 +4,19 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.67] — 2026-06-27
+
+### Tests — whitespace normalisation and FIB guard branches (330 total, up from 326)
+
+Four new tests covering previously untested paths in font detection and legacy DOC parsing:
+
+- `TestPptxFontDetection` (1): `typeface="Siyam  Rupali  ANSI"` with internal double spaces — `_WS_RE` collapses before lookup → match found → `True`
+- `TestOdtFontDetection` (1): `svg:font-family="Siyam  Rupali  ANSI"` with double spaces → `_WS_RE` collapses → match → `True`
+- `TestXlsxFontDetection` (1): `<name val="Siyam  Rupali  ANSI"/>` with double spaces → `_WS_RE` collapses → match → `True`
+- `TestExtractLegacyDoc` (1): `cbRgFcLcb=60` pushes `fib_end=518 > 510` → `fib_end+2 <= len(data)` guard fails → `cswNew` is NOT read; scan range is empty → `return ""`
+
+---
+
 ## [v4.10.66] — 2026-06-27
 
 ### Tests — dispatch and font-detection gaps closed (326 total, up from 321)
