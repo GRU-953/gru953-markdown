@@ -284,6 +284,55 @@ def _pptx_font_has_bijoy(path: str) -> bool:
     return False
 
 
+def _odt_font_has_bijoy(path: str) -> bool:
+    """
+    Return True if any ODF text document part declares a Bijoy/SutonnyMJ font.
+
+    ODT (and OTT) is a ZIP of XML files.  Font names appear as ``svg:font-family``
+    on ``<style:font-face>`` elements and as ``fo:font-name`` on
+    ``<style:text-properties>`` elements in both content.xml and styles.xml.
+    Normalisation mirrors the other font-detection helpers.  Returns False on any error.
+    """
+    import zipfile
+    import xml.etree.ElementTree as ET
+    _STYLE_NS = "urn:oasis:names:tc:opendocument:xmlns:style:1.0"
+    _SVG_NS   = "http://www.w3.org/2000/svg"
+    _FO_NS    = "http://www.w3.org/1999/XSL/Format"
+    try:
+        with zipfile.ZipFile(path, "r") as z:
+            parts = []
+            for name in ("content.xml", "styles.xml"):
+                if name in z.namelist():
+                    parts.append(z.read(name))
+        if not parts:
+            return False
+        for xml_bytes in parts:
+            root = ET.fromstring(xml_bytes)
+            # svg:font-family on <style:font-face>
+            for elem in root.iter(f"{{{_STYLE_NS}}}font-face"):
+                val = elem.get(f"{{{_SVG_NS}}}font-family", "")
+                if val:
+                    norm = _WS_RE.sub(" ", val.strip().lower())
+                    comma = norm.find(",")
+                    if comma >= 0:
+                        norm = norm[:comma].strip()
+                    if norm in _BIJOY_FONTS:
+                        return True
+            # fo:font-name on <style:text-properties>
+            for elem in root.iter(f"{{{_STYLE_NS}}}text-properties"):
+                val = elem.get(f"{{{_FO_NS}}}font-name", "")
+                if val:
+                    norm = _WS_RE.sub(" ", val.strip().lower())
+                    comma = norm.find(",")
+                    if comma >= 0:
+                        norm = norm[:comma].strip()
+                    if norm in _BIJOY_FONTS:
+                        return True
+    except Exception:
+        pass
+    return False
+
+
 def is_image(path) -> bool:
     """Return True if *path* has a known raster-image extension."""
     return Path(path).suffix.lower() in IMAGE_EXTS
@@ -553,6 +602,9 @@ def convert_file(
         _PPTX_EXTS = (".pptx", ".pptm", ".ppsx", ".ppsm", ".potx", ".potm")
         if not needs_bijoy and p.suffix.lower() in _PPTX_EXTS:
             needs_bijoy = _pptx_font_has_bijoy(str(p))
+        _ODT_EXTS = (".odt", ".ott")
+        if not needs_bijoy and p.suffix.lower() in _ODT_EXTS:
+            needs_bijoy = _odt_font_has_bijoy(str(p))
         if needs_bijoy:
             text = bijoy_func(text)
             steps.append("bijoy")

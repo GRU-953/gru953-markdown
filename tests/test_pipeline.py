@@ -14,7 +14,7 @@ import pipeline
 from pipeline import (
     convert_file, is_image, is_pdf, is_legacy_doc, is_unsupported, is_rtf, is_xlsx, is_plain_text,
     _read_plain_text, _extract_xlsx_direct, _extract_legacy_doc,
-    _docx_font_has_bijoy, _rtf_font_has_bijoy, _pptx_font_has_bijoy,
+    _docx_font_has_bijoy, _rtf_font_has_bijoy, _pptx_font_has_bijoy, _odt_font_has_bijoy,
 )
 
 
@@ -1009,6 +1009,82 @@ class TestPptxFontDetection:
         """ASCII-only Bijoy PPTX + SutonnyMJ font → bijoy step via font detection."""
         f = _touch(tmp_path, "slides.pptx")
         monkeypatch.setattr(pipeline, "_pptx_font_has_bijoy", lambda p: True)
+        out = convert_file(
+            str(f),
+            markitdown=FakeMarkItDown("evsjv"),
+            auto_bijoy=True,
+            is_bijoy_func=lambda t: False,
+            bijoy_func=lambda t: "বাংলা",
+        )
+        assert "bijoy" in out["steps"]
+        assert out["text"] == "বাংলা"
+
+
+# ── ODT font-name Bijoy detection ─────────────────────────────────────────────
+
+class TestOdtFontDetection:
+    def _make_odt_svg(self, tmp_path, font_name, ext="odt"):
+        """Minimal ODT ZIP with svg:font-family on style:font-face in content.xml."""
+        import zipfile
+        odt_path = tmp_path / f"test.{ext}"
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<office:document-content'
+            '  xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"'
+            '  xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"'
+            '  xmlns:svg="http://www.w3.org/2000/svg">'
+            '<office:font-face-decls>'
+            f'<style:font-face style:name="{font_name}" svg:font-family="{font_name}"/>'
+            '</office:font-face-decls>'
+            '</office:document-content>'
+        )
+        with zipfile.ZipFile(str(odt_path), "w") as z:
+            z.writestr("content.xml", xml)
+        return str(odt_path)
+
+    def _make_odt_fo(self, tmp_path, font_name):
+        """Minimal ODT ZIP with fo:font-name on style:text-properties in content.xml."""
+        import zipfile
+        odt_path = tmp_path / "test_fo.odt"
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<office:document-content'
+            '  xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"'
+            '  xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"'
+            '  xmlns:fo="http://www.w3.org/1999/XSL/Format">'
+            '<office:automatic-styles>'
+            '<style:style style:name="T1" style:family="text">'
+            f'<style:text-properties fo:font-name="{font_name}"/>'
+            '</style:style>'
+            '</office:automatic-styles>'
+            '</office:document-content>'
+        )
+        with zipfile.ZipFile(str(odt_path), "w") as z:
+            z.writestr("content.xml", xml)
+        return str(odt_path)
+
+    def test_bijoy_svg_font_detected(self, tmp_path):
+        """SutonnyMJ in svg:font-family on style:font-face → True."""
+        assert _odt_font_has_bijoy(self._make_odt_svg(tmp_path, "SutonnyMJ")) is True
+
+    def test_bijoy_fo_font_detected(self, tmp_path):
+        """SutonnyMJ in fo:font-name on style:text-properties → True."""
+        assert _odt_font_has_bijoy(self._make_odt_fo(tmp_path, "SutonnyMJ")) is True
+
+    def test_non_bijoy_font_returns_false(self, tmp_path):
+        """Liberation Serif is not a Bijoy font → False."""
+        assert _odt_font_has_bijoy(self._make_odt_svg(tmp_path, "Liberation Serif")) is False
+
+    def test_invalid_zip_returns_false(self, tmp_path):
+        """Non-ZIP file doesn't raise — just returns False."""
+        bad = tmp_path / "bad.odt"
+        bad.write_bytes(b"not a zip file at all")
+        assert _odt_font_has_bijoy(str(bad)) is False
+
+    def test_odt_font_detection_triggers_bijoy_conversion(self, tmp_path, monkeypatch):
+        """ASCII-only Bijoy ODT + SutonnyMJ font → bijoy step via font detection."""
+        f = _touch(tmp_path, "doc.odt")
+        monkeypatch.setattr(pipeline, "_odt_font_has_bijoy", lambda p: True)
         out = convert_file(
             str(f),
             markitdown=FakeMarkItDown("evsjv"),

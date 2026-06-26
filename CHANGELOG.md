@@ -4,6 +4,26 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.44] — 2026-06-27
+
+### Feature — ODT/OTT Bijoy font detection (225 tests, up from 220)
+
+LibreOffice `.odt` and `.ott` files are Open Document Format ZIP archives whose font declarations live in `content.xml` and `styles.xml`, not in a binary stream. Added `_odt_font_has_bijoy()` to scan both XML files for known Bijoy font names in two ODF locations:
+
+- `svg:font-family` on `<style:font-face>` elements (the font-face declaration block)
+- `fo:font-name` on `<style:text-properties>` elements (per-run applied font)
+
+Updated `convert_file()` auto-bijoy block: if the file is `.odt`/`.ott` and no Bijoy content was detected via text heuristics, `_odt_font_has_bijoy()` is checked and forces Bijoy conversion if it returns `True` — consistent with the DOCX, RTF, and PPTX font-detection chains.
+
+**New tests — `TestOdtFontDetection` (5 tests):**
+- `test_bijoy_svg_font_detected`: `SutonnyMJ` in `svg:font-family` → `True`
+- `test_bijoy_fo_font_detected`: `SutonnyMJ` in `fo:font-name` → `True`
+- `test_non_bijoy_font_returns_false`: `Liberation Serif` → `False`
+- `test_invalid_zip_returns_false`: non-ZIP `.odt` → `False` (no raise)
+- `test_odt_font_detection_triggers_bijoy_conversion`: monkeypatched `_odt_font_has_bijoy` → `True` on an ASCII-content `.odt` → `"bijoy"` in steps, text converted
+
+---
+
 ## [v4.10.43] — 2026-06-27
 
 ### Tests — ocr_pdf per-page TesseractNotFoundError path (220 total, up from 219)
