@@ -4,6 +4,16 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.32] — 2026-06-27
+
+### Tests — 5 new coverage-gap tests (189 total, up from 184)
+
+**`test_pipeline.py`**
+- `TestExtractXlsxDirect.test_header_only_sheet`: a sheet with exactly one row produces `header | separator` with no data lines — the `len(padded) > 1` guard was previously untested
+- `TestDocumentConversion.test_generic_format_uses_markitdown` (4 parametrize cases): non-special formats `.html`, `.pptx`, `.json`, `.xml` route through the generic MarkItDown `else` branch and emit the `"markitdown"` step — this entire code path had no test
+
+---
+
 ## [v4.10.31] — 2026-06-27
 
 ### Tests — 11 new coverage-gap tests (184 total, up from 173)

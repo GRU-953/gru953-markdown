@@ -71,6 +71,15 @@ class TestDocumentConversion:
         assert out["steps"] == ["markitdown"]
         assert md.calls == [f]
 
+    @pytest.mark.parametrize("name", ["page.html", "deck.pptx", "data.json", "feed.xml"])
+    def test_generic_format_uses_markitdown(self, tmp_path, name):
+        """Non-special formats (.html, .pptx, .json, .xml) go through the generic MarkItDown else-branch."""
+        f = _touch(tmp_path, name)
+        md = FakeMarkItDown("converted content")
+        out = convert_file(str(f), markitdown=md, auto_bijoy=False)
+        assert "markitdown" in out["steps"]
+        assert out["text"] == "converted content"
+
     def test_none_text_content_becomes_empty(self, tmp_path):
         f = _touch(tmp_path, "doc.pdf")
         md = FakeMarkItDown(None)
@@ -616,6 +625,21 @@ class TestExtractXlsxDirect:
         f.write_bytes(b"dummy")
         result = _extract_xlsx_direct(str(f))
         assert result == ""
+
+    def test_header_only_sheet(self, tmp_path, monkeypatch):
+        """A sheet with only a header row (no data rows) emits header + GFM separator only."""
+        import sys
+        sheet = self._make_sheet("Sheet1", [("Name", "Score")])
+        fake_mod = self._make_fake_openpyxl([sheet])
+        monkeypatch.setitem(sys.modules, "openpyxl", fake_mod)
+
+        f = tmp_path / "header_only.xlsx"
+        f.write_bytes(b"dummy")
+        result = _extract_xlsx_direct(str(f))
+        lines = result.strip().split("\n")
+        assert lines[0] == "| Name | Score |"
+        assert lines[1] == "| --- | --- |"
+        assert len(lines) == 2
 
 
 # ── _extract_legacy_doc unit tests ───────────────────────────────────────────
