@@ -4,6 +4,31 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.45] — 2026-06-27
+
+### Tests — font-detection empty-parts guards and .doc/.ott path coverage (232 total, up from 225)
+
+Closed 7 previously untested branches across four test classes:
+
+**`TestLegacyDoc`:**
+- `test_doc_ole_empty_markitdown_returns_text`: OLE extraction returns empty → MarkItDown succeeds → `"markitdown"` in steps, no `"doc_empty"`
+
+**`TestDocxFontDetection`:**
+- `test_empty_zip_no_parts_returns_false`: DOCX ZIP with no `word/*.xml` → `parts = []` → `False` (the `if not parts: return False` guard)
+
+**`TestPptxFontDetection`:**
+- `test_empty_zip_no_parts_returns_false`: PPTX ZIP with no matching slide/master/theme parts → `parts = []` → `False`
+
+**`TestExtractXlsxDirect`:**
+- `test_multi_sheet_blank_title_no_heading`: 2-sheet workbook with blank titles → `not sheet.title` → `else` branch, no `## ` headings emitted
+
+**`TestOdtFontDetection`:**
+- `test_odt_empty_zip_returns_false`: ODT ZIP with no `content.xml`/`styles.xml` → `parts = []` → `False`
+- `test_bijoy_font_in_styles_xml_detected`: Bijoy font declared only in `styles.xml` (not `content.xml`) → `True`
+- `test_ott_extension_triggers_font_detection`: `.ott` (ODF template) is in `_ODT_EXTS` → font detection runs → bijoy conversion triggered
+
+---
+
 ## [v4.10.44] — 2026-06-27
 
 ### Feature — ODT/OTT Bijoy font detection (225 tests, up from 220)

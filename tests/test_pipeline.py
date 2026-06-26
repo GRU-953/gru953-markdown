@@ -323,6 +323,16 @@ class TestLegacyDoc:
         assert "doc_empty" not in out["steps"]
         assert out["text"] == "Extracted content"
 
+    def test_doc_ole_empty_markitdown_returns_text(self, tmp_path, monkeypatch):
+        """When OLE extraction returns empty and MarkItDown returns text, 'markitdown' step appears."""
+        f = _touch(tmp_path, "old.doc")
+        monkeypatch.setattr(pipeline, "_extract_legacy_doc", lambda path: "")
+        md = FakeMarkItDown("recovered text from MarkItDown")
+        out = convert_file(str(f), markitdown=md, auto_bijoy=False)
+        assert "markitdown" in out["steps"]
+        assert "doc_empty" not in out["steps"]
+        assert out["text"] == "recovered text from MarkItDown"
+
 
 # ── T-2: is_unsupported + ValueError ─────────────────────────────────────────
 
@@ -737,6 +747,22 @@ class TestExtractXlsxDirect:
         f.write_bytes(b"dummy")
         assert _extract_xlsx_direct(str(f)) == ""
 
+    def test_multi_sheet_blank_title_no_heading(self, tmp_path, monkeypatch):
+        """Multi-sheet workbook where sheet titles are blank → no H2 headings emitted."""
+        import sys
+        sheets = [
+            self._make_sheet("", [("A",), ("1",)]),
+            self._make_sheet("", [("B",), ("2",)]),
+        ]
+        fake_mod = self._make_fake_openpyxl(sheets)
+        monkeypatch.setitem(sys.modules, "openpyxl", fake_mod)
+        f = tmp_path / "notitle.xlsx"
+        f.write_bytes(b"dummy")
+        result = _extract_xlsx_direct(str(f))
+        assert "## " not in result
+        assert "| A |" in result
+        assert "| B |" in result
+
 
 # ── _extract_legacy_doc unit tests ───────────────────────────────────────────
 
@@ -898,6 +924,14 @@ class TestDocxFontDetection:
             z.writestr("word/styles.xml", styles_xml)
         assert _docx_font_has_bijoy(str(docx_path)) is True
 
+    def test_empty_zip_no_parts_returns_false(self, tmp_path):
+        """DOCX ZIP that contains no word/*.xml → parts is empty → False."""
+        import zipfile
+        docx_path = tmp_path / "no_xml.docx"
+        with zipfile.ZipFile(str(docx_path), "w") as z:
+            z.writestr("mimetype", "placeholder")
+        assert _docx_font_has_bijoy(str(docx_path)) is False
+
 
 # ── RTF font-name Bijoy detection ─────────────────────────────────────────────
 
@@ -1019,6 +1053,14 @@ class TestPptxFontDetection:
         assert "bijoy" in out["steps"]
         assert out["text"] == "বাংলা"
 
+    def test_empty_zip_no_parts_returns_false(self, tmp_path):
+        """PPTX ZIP with no matching XML parts → parts is empty → False."""
+        import zipfile
+        pptx_path = tmp_path / "empty.pptx"
+        with zipfile.ZipFile(str(pptx_path), "w") as z:
+            z.writestr("mimetype", "placeholder")
+        assert _pptx_font_has_bijoy(str(pptx_path)) is False
+
 
 # ── ODT font-name Bijoy detection ─────────────────────────────────────────────
 
@@ -1084,6 +1126,47 @@ class TestOdtFontDetection:
     def test_odt_font_detection_triggers_bijoy_conversion(self, tmp_path, monkeypatch):
         """ASCII-only Bijoy ODT + SutonnyMJ font → bijoy step via font detection."""
         f = _touch(tmp_path, "doc.odt")
+        monkeypatch.setattr(pipeline, "_odt_font_has_bijoy", lambda p: True)
+        out = convert_file(
+            str(f),
+            markitdown=FakeMarkItDown("evsjv"),
+            auto_bijoy=True,
+            is_bijoy_func=lambda t: False,
+            bijoy_func=lambda t: "বাংলা",
+        )
+        assert "bijoy" in out["steps"]
+        assert out["text"] == "বাংলা"
+
+    def test_odt_empty_zip_returns_false(self, tmp_path):
+        """ZIP with no content.xml or styles.xml → parts is empty → False."""
+        import zipfile
+        odt_path = tmp_path / "no_xml.odt"
+        with zipfile.ZipFile(str(odt_path), "w") as z:
+            z.writestr("mimetype", "application/vnd.oasis.opendocument.text")
+        assert _odt_font_has_bijoy(str(odt_path)) is False
+
+    def test_bijoy_font_in_styles_xml_detected(self, tmp_path):
+        """SutonnyMJ declared only in styles.xml (not content.xml) is also detected."""
+        import zipfile
+        odt_path = tmp_path / "styles_only.odt"
+        styles_xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<office:document-styles'
+            '  xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"'
+            '  xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"'
+            '  xmlns:svg="http://www.w3.org/2000/svg">'
+            '<office:font-face-decls>'
+            '<style:font-face style:name="SutonnyMJ" svg:font-family="SutonnyMJ"/>'
+            '</office:font-face-decls>'
+            '</office:document-styles>'
+        )
+        with zipfile.ZipFile(str(odt_path), "w") as z:
+            z.writestr("styles.xml", styles_xml)
+        assert _odt_font_has_bijoy(str(odt_path)) is True
+
+    def test_ott_extension_triggers_font_detection(self, tmp_path, monkeypatch):
+        """.ott (ODF template) is also in _ODT_EXTS → font detection applies."""
+        f = _touch(tmp_path, "template.ott")
         monkeypatch.setattr(pipeline, "_odt_font_has_bijoy", lambda p: True)
         out = convert_file(
             str(f),
