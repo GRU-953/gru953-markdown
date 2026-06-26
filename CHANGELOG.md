@@ -4,6 +4,22 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.35] — 2026-06-27
+
+### Tests — OCR PDF and pymupdf availability coverage (203 total, up from 199)
+
+Added `TestPymupdfAvailable` and `TestOcrPdf` to `test_ocr_engine.py`, closing the last gap in OCR engine test coverage.
+
+`TestPymupdfAvailable`:
+- `test_returns_true_when_available`: mocked pymupdf module in `sys.modules` → `pymupdf_available()` returns `True`
+- `test_returns_false_when_not_installed`: `sys.modules["pymupdf"] = None` → returns `False`
+
+`TestOcrPdf`:
+- `test_missing_file_raises_file_not_found`: with pymupdf mocked as available, nonexistent path → `FileNotFoundError`
+- `test_pymupdf_not_installed_raises_runtime`: `sys.modules["pymupdf"] = None` → `RuntimeError` with "pymupdf" in message
+
+---
+
 ## [v4.10.34] — 2026-06-27
 
 ### Improved — PPTX Bijoy font detection via DrawingML a:latin scanning

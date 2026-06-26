@@ -13,7 +13,7 @@ from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from ocr_engine import LANG_CODES, ocr_image, tesseract_available, _setup_tesseract
+from ocr_engine import LANG_CODES, ocr_image, ocr_pdf, tesseract_available, pymupdf_available, _setup_tesseract
 
 
 # ── LANG_CODES ────────────────────────────────────────────────────────────────
@@ -128,3 +128,31 @@ class TestTesseractAvailableTrue:
         with unittest.mock.patch("pytesseract.get_tesseract_version",
                                   side_effect=Exception("not found")):
             assert tesseract_available() is False
+
+
+# ── pymupdf_available ─────────────────────────────────────────────────────────
+
+class TestPymupdfAvailable:
+    def test_returns_true_when_available(self):
+        fake_mod = unittest.mock.MagicMock()
+        with unittest.mock.patch.dict(sys.modules, {"pymupdf": fake_mod}):
+            assert pymupdf_available() is True
+
+    def test_returns_false_when_not_installed(self):
+        with unittest.mock.patch.dict(sys.modules, {"pymupdf": None}):
+            assert pymupdf_available() is False
+
+
+# ── ocr_pdf error handling ────────────────────────────────────────────────────
+
+class TestOcrPdf:
+    def test_missing_file_raises_file_not_found(self):
+        fake_mod = unittest.mock.MagicMock()
+        with unittest.mock.patch.dict(sys.modules, {"pymupdf": fake_mod}):
+            with pytest.raises(FileNotFoundError):
+                ocr_pdf("/nonexistent/path/doc.pdf")
+
+    def test_pymupdf_not_installed_raises_runtime(self):
+        with unittest.mock.patch.dict(sys.modules, {"pymupdf": None}):
+            with pytest.raises(RuntimeError, match="pymupdf"):
+                ocr_pdf("/any/path.pdf")
