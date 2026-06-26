@@ -718,6 +718,25 @@ class TestExtractXlsxDirect:
         assert lines[1] == "| --- | --- |"
         assert len(lines) == 2
 
+    def test_openpyxl_not_installed_returns_empty(self, tmp_path, monkeypatch):
+        """When openpyxl is not importable, returns empty string."""
+        import sys
+        monkeypatch.setitem(sys.modules, "openpyxl", None)
+        f = tmp_path / "data.xlsx"
+        f.write_bytes(b"dummy")
+        assert _extract_xlsx_direct(str(f)) == ""
+
+    def test_load_workbook_exception_returns_empty(self, tmp_path, monkeypatch):
+        """When load_workbook raises, the outer except swallows it and returns empty string."""
+        import sys
+        broken_mod = type("openpyxl", (), {
+            "load_workbook": staticmethod(lambda *a, **kw: (_ for _ in ()).throw(OSError("corrupt")))
+        })
+        monkeypatch.setitem(sys.modules, "openpyxl", broken_mod)
+        f = tmp_path / "data.xlsx"
+        f.write_bytes(b"dummy")
+        assert _extract_xlsx_direct(str(f)) == ""
+
 
 # ── _extract_legacy_doc unit tests ───────────────────────────────────────────
 

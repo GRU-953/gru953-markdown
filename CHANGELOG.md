@@ -4,6 +4,17 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.41] — 2026-06-27
+
+### Tests — XLSX direct-extraction error paths (217 total, up from 215)
+
+Added 2 tests to `TestExtractXlsxDirect` covering the two silent-return paths in `_extract_xlsx_direct()`:
+
+- `test_openpyxl_not_installed_returns_empty`: `sys.modules["openpyxl"] = None` (ImportError) → returns `""`
+- `test_load_workbook_exception_returns_empty`: `load_workbook()` raises `OSError` → outer `except Exception: return ""` at pipeline.py:354
+
+---
+
 ## [v4.10.40] — 2026-06-27
 
 ### Tests — RTF exception-silencing branches (215 total, up from 213)
