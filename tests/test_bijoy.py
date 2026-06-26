@@ -289,3 +289,30 @@ class TestChBoundary:
 
     def test_valid_index_returns_char(self):
         assert _ch("abc", 0) == "a"
+
+
+# ── PRE_MAP and _PRE_REGEX whitespace handling ────────────────────────────────
+
+class TestPreMapAndPreRegex:
+    def test_yy_pre_map_collapses_to_single(self):
+        """PRE_MAP ('yy', 'y'): double-y input produces same output as single-y."""
+        assert convert_bijoy_to_unicode("yy") == convert_bijoy_to_unicode("y")
+
+    def test_vv_pre_map_collapses_to_single(self):
+        """PRE_MAP ('vv', 'v'): double-v input produces same output as single-v."""
+        assert convert_bijoy_to_unicode("vv") == convert_bijoy_to_unicode("v")
+
+    def test_multiple_spaces_collapsed_to_single(self):
+        """_PRE_REGEX collapses consecutive spaces in Bijoy input before conversion."""
+        # K=ক, M=গ; double-space should produce same result as single-space
+        assert convert_bijoy_to_unicode("K  M") == convert_bijoy_to_unicode("K M")
+
+    def test_prekar_before_space_not_reordered(self):
+        """In _rearrange Pass 2, pre-kar before a space (_is_space guard) stays in place."""
+        # '†' maps to ে (pre-kar), 'M' maps to গ.
+        # '† M': pre-kar is followed by space → _is_space(next) → skip reorder → ে stays before space
+        # '†M':  pre-kar is followed by consonant → reorder → গে
+        without_space = convert_bijoy_to_unicode("†M")   # reordered: গে
+        with_space    = convert_bijoy_to_unicode("† M")  # not reordered: ে followed by space
+        assert without_space != with_space
+        assert "ে" in with_space  # pre-kar remains at position before the space

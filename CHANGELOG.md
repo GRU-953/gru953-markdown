@@ -4,6 +4,19 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.47] — 2026-06-27
+
+### Tests — PRE_MAP, `_PRE_REGEX`, and `_is_space` guard in bijoy_unicode (241 total, up from 237)
+
+Added `TestPreMapAndPreRegex` class (4 tests) covering preprocessing paths not previously exercised directly:
+
+- `test_yy_pre_map_collapses_to_single`: PRE_MAP `("yy", "y")` — double-y input produces same Unicode output as single-y
+- `test_vv_pre_map_collapses_to_single`: PRE_MAP `("vv", "v")` — double-v collapses before conversion
+- `test_multiple_spaces_collapsed_to_single`: `_PRE_REGEX` `r" +"` pattern — consecutive spaces in Bijoy input become a single space in the Unicode result
+- `test_prekar_before_space_not_reordered`: `_rearrange()` Pass 2 `_is_space` guard — a pre-kar (ে) immediately followed by a space is NOT reordered, while a pre-kar before a consonant IS (გে vs ে followed by space)
+
+---
+
 ## [v4.10.46] — 2026-06-27
 
 ### Tests — `_setup_tesseract` win32 paths and `ocr_pdf` multi-page (237 total, up from 232)
