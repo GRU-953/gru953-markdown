@@ -4,6 +4,17 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.9] — 2026-06-26
+
+### Improved — file list keyboard navigation
+- Arrow Up / Arrow Down now moves the file selection in the Convert tab (when focus is not inside the editor or a text input). The selected row scrolls into view automatically.
+- On low-end hardware (`data-perf="low"`), scrolling uses `behavior: instant` instead of smooth to avoid animation overhead.
+
+### Improved — selected file auto-scrolls into view
+- Selecting a file programmatically (e.g., after a conversion finishes) now ensures the row is visible in the file list panel via `scrollIntoView({ block: "nearest" })`. Previously, on long lists, the active row could scroll off screen and the list would not reposition.
+
+---
+
 ## [v4.10.8] — 2026-06-26
 
 ### Improved — adaptive animation for low-end hardware

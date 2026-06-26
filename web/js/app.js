@@ -304,6 +304,13 @@ function wireConvert() {
     const isConvert = currentView === "convert";
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "o" && !e.shiftKey) { if (isConvert) { e.preventDefault(); addFiles(); } }
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { if (isConvert) { e.preventDefault(); convertAll(); } }
+    // Arrow-key navigation through the file list when focus is not in a text input
+    if (isConvert && files.length && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      const tag = document.activeElement && document.activeElement.tagName;
+      if (tag === "TEXTAREA" || tag === "INPUT") return;
+      if (e.key === "ArrowDown") { e.preventDefault(); selectFile(Math.min(selected + 1, files.length - 1)); }
+      if (e.key === "ArrowUp")   { e.preventDefault(); selectFile(Math.max(selected - 1, 0)); }
+    }
   });
 }
 async function addFiles() {
@@ -406,7 +413,13 @@ function renderFiles() {
     list.appendChild(row);
   });
 }
-function selectFile(i) { selected = i; renderFiles(); renderOutput(); }
+function selectFile(i) {
+  selected = i; renderFiles(); renderOutput();
+  if (i >= 0) {
+    const rows = document.querySelectorAll(".file-row");
+    if (rows[i]) rows[i].scrollIntoView({ block: "nearest", behavior: isLowEnd ? "instant" : "smooth" });
+  }
+}
 function removeFile(i) {
   files.splice(i, 1);
   if (selected >= files.length) selected = files.length - 1;
