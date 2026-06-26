@@ -4,6 +4,27 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.64] — 2026-06-27
+
+### Fix + Feature — XLSX Bijoy font detection (312 tests, up from 305)
+
+**Bug fixed:** XLSX files using SutonnyMJ/Bijoy fonts for Bengali column headers failed to convert when the overall file had too many English/numeric cells to trigger the text-density threshold. The headers remained garbled Bijoy encoding in the output.
+
+**Root cause:** `detect_script` on the full XLSX text correctly returned `"latin"` (6 % Bijoy density, below the 7.7 % threshold) even though the first 300 chars — the Bengali header row — were clearly Bijoy-encoded.
+
+**Fix:** Added `_xlsx_font_has_bijoy(path)` — reads `xl/styles.xml` from the XLSX ZIP and checks `<name val="..."/>` elements inside `<fonts>` against the curated `_BIJOY_FONTS` allowlist. Hooked into `convert_file` as a secondary detection step for `.xlsx`/`.xlsm` files, identical in spirit to the existing DOCX, RTF, PPTX, and ODT font-detection guards.
+
+**Tests — 7 new tests in `TestXlsxFontDetection`:**
+- `test_bijoy_font_detected`: SutonnyMJ in xl/styles.xml → True
+- `test_non_bijoy_font_returns_false`: Calibri → False
+- `test_no_styles_xml_returns_false`: XLSX with no styles file → False
+- `test_invalid_zip_returns_false`: non-ZIP file → exception swallowed → False
+- `test_comma_suffix_stripped`: `"SutonnyMJ,Bold"` stripped to `"sutonnymj"` before lookup → True
+- `test_name_val_empty_skipped`: `<name val=""/>` → `if not val: continue` → False
+- `test_font_detection_triggers_bijoy_conversion`: end-to-end: mocked detection returns True → bijoy step applied in convert_file
+
+---
+
 ## [v4.10.63] — 2026-06-27
 
 ### Tests — RTF empty segments, ODT absent attributes, needs_bijoy short-circuit (305 total, up from 301)

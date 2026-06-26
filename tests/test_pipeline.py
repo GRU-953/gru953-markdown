@@ -15,6 +15,7 @@ from pipeline import (
     convert_file, is_image, is_pdf, is_legacy_doc, is_unsupported, is_rtf, is_xlsx, is_plain_text,
     _read_plain_text, _extract_xlsx_direct, _extract_legacy_doc,
     _docx_font_has_bijoy, _rtf_font_has_bijoy, _pptx_font_has_bijoy, _odt_font_has_bijoy,
+    _xlsx_font_has_bijoy,
 )
 
 
@@ -1753,3 +1754,81 @@ class TestOdtFontDetection:
         with zipfile.ZipFile(str(odt_path), "w") as z:
             z.writestr("content.xml", xml)
         assert _odt_font_has_bijoy(str(odt_path)) is False
+
+
+# ── XLSX font-name Bijoy detection ───────────────────────────────────────────
+
+class TestXlsxFontDetection:
+    _SS_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+
+    def _make_xlsx_with_font(self, tmp_path, font_name):
+        """Minimal XLSX ZIP with xl/styles.xml containing one <name val="..."/> entry."""
+        import zipfile
+        xlsx_path = tmp_path / "test.xlsx"
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            f'<styleSheet xmlns="{self._SS_NS}">'
+            '<fonts count="1">'
+            '<font>'
+            f'<name val="{font_name}"/>'
+            '</font>'
+            '</fonts>'
+            '</styleSheet>'
+        )
+        with zipfile.ZipFile(str(xlsx_path), "w") as z:
+            z.writestr("xl/styles.xml", xml)
+        return str(xlsx_path)
+
+    def test_bijoy_font_detected(self, tmp_path):
+        """SutonnyMJ in xl/styles.xml <name val="..."/> → True."""
+        assert _xlsx_font_has_bijoy(self._make_xlsx_with_font(tmp_path, "SutonnyMJ")) is True
+
+    def test_non_bijoy_font_returns_false(self, tmp_path):
+        """Calibri is not a Bijoy font → False."""
+        assert _xlsx_font_has_bijoy(self._make_xlsx_with_font(tmp_path, "Calibri")) is False
+
+    def test_no_styles_xml_returns_false(self, tmp_path):
+        """XLSX ZIP without xl/styles.xml → False."""
+        import zipfile
+        xlsx_path = tmp_path / "no_styles.xlsx"
+        with zipfile.ZipFile(str(xlsx_path), "w") as z:
+            z.writestr("xl/workbook.xml", "<workbook/>")
+        assert _xlsx_font_has_bijoy(str(xlsx_path)) is False
+
+    def test_invalid_zip_returns_false(self, tmp_path):
+        """Non-ZIP file → exception caught → False."""
+        bad = tmp_path / "bad.xlsx"
+        bad.write_bytes(b"not a zip")
+        assert _xlsx_font_has_bijoy(str(bad)) is False
+
+    def test_comma_suffix_stripped(self, tmp_path):
+        """Font name 'SutonnyMJ,Bold' → comma stripped → 'sutonnymj' → True."""
+        assert _xlsx_font_has_bijoy(self._make_xlsx_with_font(tmp_path, "SutonnyMJ,Bold")) is True
+
+    def test_name_val_empty_skipped(self, tmp_path):
+        """<name val=''/> → val='' → if not val: continue → element skipped → False."""
+        import zipfile
+        xlsx_path = tmp_path / "empty_name.xlsx"
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            f'<styleSheet xmlns="{self._SS_NS}">'
+            '<fonts count="1"><font><name val=""/></font></fonts>'
+            '</styleSheet>'
+        )
+        with zipfile.ZipFile(str(xlsx_path), "w") as z:
+            z.writestr("xl/styles.xml", xml)
+        assert _xlsx_font_has_bijoy(str(xlsx_path)) is False
+
+    def test_font_detection_triggers_bijoy_conversion(self, tmp_path, monkeypatch):
+        """XLSX with SutonnyMJ font + Bijoy body text → bijoy step applied via font detection."""
+        f = _touch(tmp_path, "bangla.xlsx")
+        monkeypatch.setattr(pipeline, "_xlsx_font_has_bijoy", lambda p: True)
+        out = convert_file(
+            str(f),
+            markitdown=FakeMarkItDown("evsjv"),
+            auto_bijoy=True,
+            is_bijoy_func=lambda t: False,
+            bijoy_func=lambda t: "বাংলা",
+        )
+        assert "bijoy" in out["steps"]
+        assert out["text"] == "বাংলা"

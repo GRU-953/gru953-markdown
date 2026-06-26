@@ -333,6 +333,40 @@ def _odt_font_has_bijoy(path: str) -> bool:
     return False
 
 
+def _xlsx_font_has_bijoy(path: str) -> bool:
+    """Return True if the XLSX workbook declares a known Bijoy font in xl/styles.xml.
+
+    XLSX is a ZIP of XML files.  Font names appear on ``<name val="..."/>``
+    children of ``<font>`` elements inside the SpreadsheetML ``<fonts>`` block
+    in ``xl/styles.xml``.  Catches XLSX/XLSM files that contain Bijoy-encoded
+    Bengali text in cell values without sufficient Bijoy character density to
+    trigger the text-scan threshold (common when a header row is Bijoy but the
+    bulk of data is numeric or ASCII).  Returns False on any error.
+    """
+    import zipfile
+    import xml.etree.ElementTree as ET
+    _SS_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+    try:
+        with zipfile.ZipFile(path, "r") as z:
+            if "xl/styles.xml" not in z.namelist():
+                return False
+            xml_bytes = z.read("xl/styles.xml")
+        root = ET.fromstring(xml_bytes)
+        for elem in root.iter(f"{{{_SS_NS}}}name"):
+            val = elem.get("val", "")
+            if not val:
+                continue
+            norm = _WS_RE.sub(" ", val.strip().lower())
+            comma = norm.find(",")
+            if comma >= 0:
+                norm = norm[:comma].strip()
+            if norm in _BIJOY_FONTS:
+                return True
+    except Exception:
+        pass
+    return False
+
+
 def is_image(path) -> bool:
     """Return True if *path* has a known raster-image extension."""
     return Path(path).suffix.lower() in IMAGE_EXTS
@@ -605,6 +639,11 @@ def convert_file(
         _ODT_EXTS = (".odt", ".ott")
         if not needs_bijoy and p.suffix.lower() in _ODT_EXTS:
             needs_bijoy = _odt_font_has_bijoy(str(p))
+        # Font-assisted detection for XLSX: scan <name val="..."/> in xl/styles.xml.
+        # Catches headers-in-Bijoy spreadsheets where numeric/ASCII body dilutes density.
+        _XLSX_EXTS = (".xlsx", ".xlsm")
+        if not needs_bijoy and p.suffix.lower() in _XLSX_EXTS:
+            needs_bijoy = _xlsx_font_has_bijoy(str(p))
         if needs_bijoy:
             text = bijoy_func(text)
             steps.append("bijoy")
