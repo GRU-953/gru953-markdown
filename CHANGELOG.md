@@ -4,6 +4,16 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.56] — 2026-06-27
+
+### Tests — PRE_MAP and _PRE_REGEX untested entries (283 total, up from 268)
+
+New classes `TestPreMapEntries` and `TestPreRegex` in `test_bijoy.py`:
+- `TestPreMapEntries` (13 tests): soft-hyphen collapse, y&/„& ampersand drop, ‡u and wu character swaps, space-before-comma/pipe removal, backslash-space/space-backslash/bare-backslash removal, triple/quad/quintuple newline collapse
+- `TestPreRegex` (2 tests): `\n +` → `\n` (newline then spaces) and ` +\n` → `\n` (spaces then newline) from the three compiled `_PRE_REGEX` patterns
+
+---
+
 ## [v4.10.55] — 2026-06-27
 
 ### Tests — POST_MAP untested entries via _apply_literal (268 total, up from 261)

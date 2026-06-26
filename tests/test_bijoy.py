@@ -14,7 +14,7 @@ def nfc(s):
     """Normalise to NFC so ya+nukta (U+09AF U+09BC) == yya (U+09DF)."""
     return unicodedata.normalize("NFC", s)
 
-from bijoy_unicode import convert_bijoy_to_unicode, detect_script, is_bijoy, _rearrange, _ch, _apply_literal, POST_MAP
+from bijoy_unicode import convert_bijoy_to_unicode, detect_script, is_bijoy, _rearrange, _ch, _apply_literal, POST_MAP, PRE_MAP, _PRE_REGEX
 
 
 # ── detect_script ─────────────────────────────────────────────────────────────
@@ -350,3 +350,82 @@ class TestPostMapEntries:
     def test_nta_conjunct_normalised(self):
         """'ন্ত্ম' → 'ন্ত' — spurious ম stripped from the ন্ত conjunct."""
         assert _apply_literal("ন্ত্ম", POST_MAP) == "ন্ত"
+
+
+# ── PRE_MAP entries (direct _apply_literal tests) ─────────────────────────────
+
+class TestPreMapEntries:
+    """Direct coverage of PRE_MAP substitutions not exercised by other tests."""
+
+    def test_double_soft_hyphen_collapsed(self):
+        """PRE_MAP ('\\xad\\xad', '\\xad'): consecutive soft hyphens collapsed to one."""
+        assert _apply_literal("\xad\xad", PRE_MAP) == "\xad"
+
+    def test_y_ampersand_drops_ampersand(self):
+        """PRE_MAP ('y&', 'y'): trailing & after y (hasanta artifact) is removed."""
+        assert _apply_literal("y&", PRE_MAP) == "y"
+
+    def test_daari_ampersand_drops_ampersand(self):
+        """PRE_MAP ('\\u201e&', '\\u201e'): & after „ is removed."""
+        assert _apply_literal("„&", PRE_MAP) == "„"
+
+    def test_danda_u_swap(self):
+        """PRE_MAP ('\\u2021u', 'u\\u2021'): ‡ and u swapped so vowel precedes consonant."""
+        assert _apply_literal("‡u", PRE_MAP) == "u‡"
+
+    def test_wu_swap(self):
+        """PRE_MAP ('wu', 'uw'): w and u swapped."""
+        assert _apply_literal("wu", PRE_MAP) == "uw"
+
+    def test_space_before_comma_removed(self):
+        """PRE_MAP (' ,', ','): space immediately before comma is removed."""
+        assert _apply_literal("word ,", PRE_MAP) == "word,"
+
+    def test_space_before_pipe_daari_removed(self):
+        r"""PRE_MAP (' \\|', '\\|'): space before pipe-daari removed."""
+        assert _apply_literal(r"word \|", PRE_MAP) == r"word\|"
+
+    def test_backslash_space_removed(self):
+        r"""PRE_MAP ('\\\\ ', ''): backslash-space sequence removed."""
+        result = _apply_literal("\\\\ ", PRE_MAP)
+        assert result == ""
+
+    def test_space_backslash_removed(self):
+        r"""PRE_MAP (' \\\\', ''): space-backslash sequence removed."""
+        result = _apply_literal(" \\\\", PRE_MAP)
+        assert result == ""
+
+    def test_bare_backslashes_removed(self):
+        r"""PRE_MAP ('\\\\', ''): bare double-backslash removed."""
+        assert _apply_literal("\\\\", PRE_MAP) == ""
+
+    def test_triple_newline_collapsed(self):
+        """PRE_MAP ('\\n\\n\\n', '\\n\\n'): three consecutive newlines → two."""
+        assert _apply_literal("\n\n\n", PRE_MAP) == "\n\n"
+
+    def test_quadruple_newline_collapsed(self):
+        """PRE_MAP ('\\n\\n\\n\\n', '\\n\\n'): four consecutive newlines → two."""
+        assert _apply_literal("\n\n\n\n", PRE_MAP) == "\n\n"
+
+    def test_quintuple_newline_collapsed(self):
+        """PRE_MAP ('\\n\\n\\n\\n\\n', '\\n\\n'): five consecutive newlines → two."""
+        assert _apply_literal("\n\n\n\n\n", PRE_MAP) == "\n\n"
+
+
+# ── _PRE_REGEX whitespace cleanup ─────────────────────────────────────────────
+
+class TestPreRegex:
+    """Coverage of _PRE_REGEX patterns not exercised by other tests."""
+
+    def _apply_pre_regex(self, text):
+        for pattern, repl in _PRE_REGEX:
+            text = pattern.sub(repl, text)
+        return text
+
+    def test_newline_then_spaces_collapsed(self):
+        """'\\n   ' → '\\n': spaces after newline stripped by _PRE_REGEX."""
+        assert self._apply_pre_regex("\n   ") == "\n"
+
+    def test_spaces_then_newline_collapsed(self):
+        """'   \\n' → '\\n': spaces before newline stripped by _PRE_REGEX."""
+        assert self._apply_pre_regex("   \n") == "\n"
