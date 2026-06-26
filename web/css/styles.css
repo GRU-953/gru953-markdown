@@ -625,3 +625,6 @@ html[data-lang="bn"] body { font-family: var(--font-bn); }
 :root[data-perf="low"] .toast,
 :root[data-perf="low"] .onboard-backdrop,
 :root[data-perf="low"] .view.active { animation: none; }
+/* backdrop-filter is GPU-expensive; remove it on low-end hardware. */
+:root[data-perf="low"] .onboard-backdrop,
+:root[data-perf="low"] .modal-backdrop { backdrop-filter: none; }

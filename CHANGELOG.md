@@ -4,6 +4,13 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.12] — 2026-06-26
+
+### Improved — low-end hardware: remove GPU-expensive backdrop blur
+- On low-end hardware (`data-perf="low"`), `backdrop-filter: blur()` is now suppressed on both the onboarding overlay and the export format modal. Blur compositing requires a GPU texture layer; removing it eliminates a visible stutter point on integrated graphics without any meaningful visual degradation.
+
+---
+
 ## [v4.10.11] — 2026-06-26
 
 ### Improved — concurrent batch conversion on multi-core machines
