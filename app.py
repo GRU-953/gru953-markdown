@@ -34,9 +34,9 @@ from bijoy_unicode import convert_bijoy_to_unicode, detect_script
 from ocr_engine import ocr_image, ocr_pdf, tesseract_available, pymupdf_available
 from pipeline import convert_file, is_image, is_pdf, is_legacy_doc
 
-APP_VERSION = "v4.5.2"
+APP_VERSION = "v4.6.0"
 MAX_FILE_BYTES = 200 * 1024 * 1024  # 200 MB hard limit
-_RELEASES_API = "https://api.github.com/repos/GRU-953/markitdown-converter/releases/latest"
+_RELEASES_API = "https://api.github.com/repos/GRU-953/gru953-markdown/releases/latest"
 
 
 def _validate_path(path: str) -> None:
@@ -256,7 +256,7 @@ class Api:
             req = urllib.request.Request(
                 _RELEASES_API,
                 headers={"Accept": "application/vnd.github+json",
-                         "User-Agent": f"MarkItDownConverter/{APP_VERSION}"},
+                         "User-Agent": f"GRU953Markdown/{APP_VERSION}"},
             )
             with urllib.request.urlopen(req, timeout=5) as resp:
                 data = _json.loads(resp.read().decode())
@@ -277,7 +277,7 @@ def _render(text: str, ext: str) -> str:
         except Exception:
             body = "<pre>" + text + "</pre>"
         return ("<!DOCTYPE html><html><head><meta charset='utf-8'>"
-                "<title>MarkItDown export</title></head><body>"
+                "<title>GRU953 Markdown export</title></head><body>"
                 + body + "</body></html>")
     return text   # md / txt are written as-is
 
@@ -303,9 +303,9 @@ def main():
 
     api = Api()
     cfg = api.get_config()
-    bg = "#0F1020" if cfg.get("theme") != "Light" else "#FFFFFF"
+    bg = "#10211D" if cfg.get("theme") != "Light" else "#F7F8F7"
     window = webview.create_window(
-        "MarkItDown Converter",
+        "GRU953 Markdown",
         url=str(_resource("web/index.html")),
         js_api=api,
         width=1180, height=760, min_size=(900, 600),

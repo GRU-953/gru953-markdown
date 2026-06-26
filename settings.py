@@ -7,13 +7,13 @@ never prevents the app from starting.
 import json
 from pathlib import Path
 
-_FILE = Path.home() / ".markitdown_converter.json"
+_FILE = Path.home() / ".gru953_markdown.json"
 _MAX_RECENT = 10
 _MAX_HISTORY = 100
 
 _DEFAULTS: dict = {
     "theme": "System",          # Light | Dark | System
-    "palette": "indigo",        # indigo | violet | slate
+    "palette": "indigo",        # indigo (Teal) | violet (Indigo) | slate (Amber)
     "ocr_language": "English",
     "auto_ocr": True,
     "auto_bijoy": True,

@@ -1,6 +1,19 @@
 # Changelog
 
-All notable changes to MarkItDown Converter are documented here.
+All notable changes to GRU953 Markdown are documented here.
+
+---
+
+## [v4.6.0] — 2026-06-26
+
+### Changed — brand rebrand
+- **App renamed**: MarkItDown Converter → **GRU953 Markdown**. Repository renamed to `gru953-markdown`. Exe renamed to `GRU953Markdown.exe`. All internal references updated.
+- **Three GRU953 brand themes**: replaced Indigo Nocturne / Violet Bloom / Slate & Amber with **GRU953 Teal** · **GRU953 Indigo** · **GRU953 Amber**, all drawn from the GRU953 Open Spectrum palette (Teal 700 `#0A6E5C`, Indigo 600 `#3A4A9E`, Amber 600 `#9C6B12`).
+- **Typography**: replaced Figtree / Hind Siliguri / Tiro Bangla with **DM Sans** (variable, covers 100–900) and **Noto Sans Bengali** (Regular + Bold), both self-hosted per GRU953 brand guidelines (no third-party CDN).
+- **Neutral surfaces**: dark bg `#10211D` → `#18302A` surface (GRU953 brand dark); light bg `#F7F8F7` (brand Neutral 50). Status colours aligned to GRU953 semantic tokens.
+- **App icon**: new geometric SVG — Teal 700 tile (64 × 64, rx 15), white M (markdown letter), Amber 400 down-arrow. Matches the GRU953 product icon family spec.
+- **Sidebar brand mark**: replaced letter "M" with inline SVG icon matching the new app icon.
+- **Settings file**: renamed `.markitdown_converter.json` → `.gru953_markdown.json` to avoid conflicts with old installs.
 
 ---
 

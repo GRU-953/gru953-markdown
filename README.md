@@ -1,23 +1,22 @@
-# MarkItDown Converter
+# GRU953 Markdown
 
-**A standalone Windows desktop app that converts documents, images, and spreadsheets to clean Markdown — with one-click smart OCR and Bengali (Bijoy → Unicode) support.**
+**A standalone Windows desktop app by GRU953 that converts documents, images, and spreadsheets to clean Markdown — with one-click smart OCR and Bengali (Bijoy → Unicode) support.**
 
-[![Release](https://img.shields.io/github/v/release/GRU-953/markitdown-converter?style=flat-square&color=4F46E5)](https://github.com/GRU-953/markitdown-converter/releases/latest)
-[![CI](https://img.shields.io/github/actions/workflow/status/GRU-953/markitdown-converter/ci.yml?branch=master&style=flat-square&label=CI)](https://github.com/GRU-953/markitdown-converter/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-144%20passing-brightgreen?style=flat-square)](https://github.com/GRU-953/markitdown-converter/actions/workflows/ci.yml)
-[![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue?style=flat-square&logo=windows)](https://github.com/GRU-953/markitdown-converter/releases/latest)
+[![Release](https://img.shields.io/github/v/release/GRU-953/gru953-markdown?style=flat-square&color=0A6E5C)](https://github.com/GRU-953/gru953-markdown/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/GRU-953/gru953-markdown/ci.yml?branch=master&style=flat-square&label=CI)](https://github.com/GRU-953/gru953-markdown/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-145%20passing-brightgreen?style=flat-square)](https://github.com/GRU-953/gru953-markdown/actions/workflows/ci.yml)
+[![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue?style=flat-square&logo=windows)](https://github.com/GRU-953/gru953-markdown/releases/latest)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
-[![Built with](https://img.shields.io/badge/Built%20with-MarkItDown-4F46E5?style=flat-square)](https://github.com/microsoft/markitdown)
+[![GRU953](https://img.shields.io/badge/GRU953-Open%20Tech-0A6E5C?style=flat-square)](https://github.com/GRU-953)
 
-> **v4** is a ground-up redesign: a modern web-based UI (pywebview + WebView2), three
-> selectable colour themes, a unified "one button" conversion pipeline, a live Markdown
-> editor/preview, batch progress, conversion history, and flexible export.
+> Simple technology. For everyone.
+> <span lang="bn">সহজ প্রযুক্তি। সবার জন্য।</span>
 
 ---
 
 ## Download
 
-> **[→ Download MarkItDownConverter.exe](https://github.com/GRU-953/markitdown-converter/releases/latest)**
+> **[→ Download GRU953Markdown.exe](https://github.com/GRU-953/gru953-markdown/releases/latest)**
 
 No Python installation. No setup wizard. Just download and run.
 
@@ -58,10 +57,10 @@ file ─▶ MarkItDown (documents)  ┐
 - Bengali text is rendered with proper Unicode fonts
 - **Copy**, **Export** (`.md` / `.html` / `.txt`), or **Export all** combined into one document
 
-### Three colour themes
+### Three GRU953 brand themes
 
-Indigo Nocturne · Violet Bloom · Slate & Amber — each in **light and dark** mode, switchable
-live in Settings. Your choice is remembered.
+**GRU953 Teal** · **GRU953 Indigo** · **GRU953 Amber** — each in **light and dark** mode, switchable
+live in Settings. Your choice is remembered. All colours drawn from the GRU953 Open Spectrum palette.
 
 ### Dedicated OCR & Bijoy tools
 
@@ -93,7 +92,7 @@ The pure-Python logic modules (`pipeline`, `bijoy_unicode`, `ocr_engine`, `setti
 
 ---
 
-## Build from Source
+## Build from source
 
 ### Prerequisites
 
@@ -107,8 +106,8 @@ The pure-Python logic modules (`pipeline`, `bijoy_unicode`, `ocr_engine`, `setti
 ### Steps
 
 ```bash
-git clone https://github.com/GRU-953/markitdown-converter.git
-cd markitdown-converter
+git clone https://github.com/GRU-953/gru953-markdown.git
+cd gru953-markdown
 pip install -r requirements.txt
 
 # Run directly (development)
@@ -118,7 +117,7 @@ python app.py
 build_exe.bat
 ```
 
-The compiled exe is written to `dist\MarkItDownConverter.exe`.
+The compiled exe is written to `dist\GRU953Markdown.exe`.
 
 ### PyInstaller notes
 
@@ -144,10 +143,10 @@ pytest tests/ --cov=bijoy_unicode --cov=ocr_engine --cov=utils --cov=settings --
 
 ---
 
-## Project Structure
+## Project structure
 
 ```
-markitdown-converter/
+gru953-markdown/
 ├── app.py                # pywebview entry — window + JS↔Python Api bridge
 ├── pipeline.py           # unified convert: MarkItDown → OCR → Bijoy
 ├── bijoy_unicode.py      # Bijoy / SutonnyMJ → Unicode (Mukti port)
@@ -166,7 +165,7 @@ markitdown-converter/
 
 ---
 
-## Credits & Attributions
+## Credits & attributions
 
 | Component | Credit |
 |---|---|
@@ -176,7 +175,18 @@ markitdown-converter/
 | [pywebview](https://github.com/r0x0r/pywebview) | Roman Sirokov — native webview windows for Python |
 | [marked](https://github.com/markedjs/marked) | Markdown rendering in the preview |
 | [Tabler Icons](https://github.com/tabler/tabler-icons) | MIT-licensed outline icon set |
-| Figtree · Hind Siliguri · Tiro Bangla | OFL-licensed fonts |
+| DM Sans | SIL Open Font License — English UI typeface |
+| Noto Sans Bengali | SIL Open Font License — Bengali typeface |
+
+---
+
+## About GRU953
+
+GRU953 is a not-for-profit, open-source product organisation on a mission to make technology
+simple — and accessible — for all. Built openly with a global community and a home in Bangladesh,
+GRU953 designs tools that anyone can use, study, and improve.
+
+Simple technology. For everyone.
 
 ---
 

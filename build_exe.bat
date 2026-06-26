@@ -1,7 +1,7 @@
 @echo off
-:: GRU-953 MarkItDown Converter v4 — PyInstaller build script (pywebview)
+:: GRU953 Markdown v4 — PyInstaller build script (pywebview)
 :: Bundles: app + web frontend + assets + Tesseract (eng + ben) + WebView2 backend
-:: Output: dist\MarkItDownConverter.exe  (standalone, no install needed)
+:: Output: dist\GRU953Markdown.exe  (standalone, no install needed)
 
 setlocal
 set TESS=C:\Program Files\Tesseract-OCR
@@ -14,7 +14,7 @@ python -c "from PIL import Image; img=Image.open('assets/app_icon.png'); img.sav
 
 echo [3/4] Running PyInstaller...
 python -m PyInstaller --noconfirm --onefile --windowed ^
-  --name "MarkItDownConverter" ^
+  --name "GRU953Markdown" ^
   --icon "assets/app_icon.ico" ^
   --add-data "web;web" ^
   --add-data "assets;assets" ^
@@ -38,8 +38,8 @@ python -m PyInstaller --noconfirm --onefile --windowed ^
   app.py
 
 echo [4/4] Done.
-if exist "dist\MarkItDownConverter.exe" (
-  echo SUCCESS: dist\MarkItDownConverter.exe
+if exist "dist\GRU953Markdown.exe" (
+  echo SUCCESS: dist\GRU953Markdown.exe
 ) else (
   echo FAILED: check build output above.
   exit /b 1

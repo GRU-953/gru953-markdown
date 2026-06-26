@@ -3,13 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MarkItDown Converter</title>
+  <title>GRU953 Markdown</title>
   <link rel="stylesheet" href="vendor/tabler-icons/tabler-icons.min.css">
   <style>
-    @font-face { font-family: "Figtree"; src: url("../assets/Figtree.ttf"); font-display: swap; }
-    @font-face { font-family: "Hind Siliguri"; src: url("../assets/HindSiliguri-Regular.ttf"); font-weight: 400; }
-    @font-face { font-family: "Hind Siliguri"; src: url("../assets/HindSiliguri-SemiBold.ttf"); font-weight: 600; }
-    @font-face { font-family: "Tiro Bangla"; src: url("../assets/TiroBangla.ttf"); }
+    @font-face { font-family: "DM Sans"; src: url("../assets/DMSans.ttf"); font-weight: 100 900; font-style: normal; font-display: swap; }
+    @font-face { font-family: "Noto Sans Bengali"; src: url("../assets/NotoSansBengali-Regular.ttf"); font-weight: 400; font-display: swap; }
+    @font-face { font-family: "Noto Sans Bengali"; src: url("../assets/NotoSansBengali-Bold.ttf"); font-weight: 700; font-display: swap; }
   </style>
   <link rel="stylesheet" href="css/themes.css">
   <link rel="stylesheet" href="css/styles.css">
@@ -18,7 +17,13 @@
   <div class="app">
     <!-- Sidebar -->
     <nav class="sidebar">
-      <div class="brand-mark">M</div>
+      <div class="brand-mark">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="22" height="22" aria-hidden="true">
+          <path d="M14 36 L14 15 L32 27 L50 15 L50 36" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="32" y1="40" x2="32" y2="51" stroke="#F4B53C" stroke-width="4" stroke-linecap="round"/>
+          <path d="M25 45 L32 52 L39 45" fill="none" stroke="#F4B53C" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
       <button class="nav-btn active" data-view="convert" title="Convert files"><i class="ti ti-transform"></i><span>Convert</span></button>
       <button class="nav-btn" data-view="ocr" title="Scan image or PDF to text"><i class="ti ti-scan"></i><span>Scan</span></button>
       <button class="nav-btn" data-view="bijoy" title="Convert old Bangla (Bijoy/SutonnyMJ) to Unicode"><i class="ti ti-language"></i><span>Bangla</span></button>
@@ -158,16 +163,16 @@
               <p>Choose an accent palette. Each adapts to light and dark mode.</p>
               <div class="palette-grid" id="palette-grid">
                 <div class="palette-card" data-palette="indigo">
-                  <div class="swatches"><div class="sw" style="background:#4F46E5"></div><div class="sw" style="background:#06B6D4"></div><div class="sw" style="background:#1E1B4B"></div></div>
-                  <div class="pname">Indigo Nocturne</div><div class="ptag">cool · premium</div>
+                  <div class="swatches"><div class="sw" style="background:#0A6E5C"></div><div class="sw" style="background:#14A88A"></div><div class="sw" style="background:#3A4A9E"></div></div>
+                  <div class="pname">GRU953 Teal</div><div class="ptag">growth · open</div>
                 </div>
                 <div class="palette-card" data-palette="violet">
-                  <div class="swatches"><div class="sw" style="background:#7C3AED"></div><div class="sw" style="background:#EC4899"></div><div class="sw" style="background:#2E1065"></div></div>
-                  <div class="pname">Violet Bloom</div><div class="ptag">creative · vivid</div>
+                  <div class="swatches"><div class="sw" style="background:#3A4A9E"></div><div class="sw" style="background:#97A3E0"></div><div class="sw" style="background:#0A6E5C"></div></div>
+                  <div class="pname">GRU953 Indigo</div><div class="ptag">depth · trust</div>
                 </div>
                 <div class="palette-card" data-palette="slate">
-                  <div class="swatches"><div class="sw" style="background:#1E293B"></div><div class="sw" style="background:#F59E0B"></div><div class="sw" style="background:#475569"></div></div>
-                  <div class="pname">Slate &amp; Amber</div><div class="ptag">warm · editorial</div>
+                  <div class="swatches"><div class="sw" style="background:#9C6B12"></div><div class="sw" style="background:#F4B53C"></div><div class="sw" style="background:#0A6E5C"></div></div>
+                  <div class="pname">GRU953 Amber</div><div class="ptag">warm · energy</div>
                 </div>
               </div>
             </div>
@@ -190,8 +195,8 @@
             </div>
             <div class="setting">
               <h3>About</h3>
-              <p id="about-ver">MarkItDown Converter · GRU-953</p>
-              <p style="margin-top:4px;font-size:12px;color:var(--text-faint)">Powered by Microsoft MarkItDown &amp; Tesseract OCR · <a href="https://github.com/GRU-953/markitdown-converter" target="_blank" style="color:var(--primary)">GitHub</a></p>
+              <p id="about-ver">GRU953 Markdown · GRU953</p>
+              <p style="margin-top:4px;font-size:12px;color:var(--text-faint)">Powered by Microsoft MarkItDown &amp; Tesseract OCR · <a href="https://github.com/GRU-953/gru953-markdown" target="_blank" style="color:var(--primary)">GitHub</a></p>
             </div>
           </div>
         </section>
