@@ -11,7 +11,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pipeline
-from pipeline import convert_file, is_image, is_legacy_doc, is_unsupported, is_rtf, is_xlsx
+from pipeline import convert_file, is_image, is_legacy_doc, is_unsupported, is_rtf, is_xlsx, is_plain_text
 
 
 # ── fakes ───────────────────────────────────────────────────────────────────
@@ -372,3 +372,48 @@ class TestXlsx:
         out = convert_file(str(f), markitdown=OOMMarkItDown())
         assert "xlsx_direct" in out["steps"]
         assert out["text"] == "row1 | col1\nrow2 | col2"
+
+
+# ── plain-text direct read ────────────────────────────────────────────────────
+
+class TestPlainText:
+    def test_is_plain_text_true(self):
+        for ext in (".txt", ".TXT", ".md", ".ini", ".cfg", ".conf", ".log", ".csv", ".tsv"):
+            assert is_plain_text(f"file{ext}") is True, f"Expected True for {ext}"
+
+    def test_is_plain_text_false(self):
+        for ext in (".docx", ".pdf", ".xlsx", ".jpg", ".py", ".html"):
+            assert is_plain_text(f"file{ext}") is False, f"Expected False for {ext}"
+
+    def test_plain_text_utf8(self, tmp_path):
+        f = tmp_path / "hello.txt"
+        f.write_text("Hello world\nLine two", encoding="utf-8")
+        out = convert_file(str(f), auto_bijoy=False)
+        assert "plaintext" in out["steps"]
+        assert "Hello world" in out["text"]
+
+    def test_plain_text_empty_file(self, tmp_path):
+        f = tmp_path / "empty.ini"
+        f.write_text("", encoding="utf-8")
+        out = convert_file(str(f), auto_bijoy=False)
+        assert "plaintext" in out["steps"]
+        assert "plaintext_empty" in out["steps"]
+
+    def test_plain_text_csv(self, tmp_path):
+        f = tmp_path / "data.csv"
+        f.write_text("name,age\nAlice,30\nBob,25", encoding="utf-8")
+        out = convert_file(str(f), auto_bijoy=False)
+        assert "plaintext" in out["steps"]
+        assert "Alice" in out["text"]
+
+    def test_plain_text_does_not_call_markitdown(self, tmp_path):
+        f = tmp_path / "notes.md"
+        f.write_text("# Notes\nContent here", encoding="utf-8")
+
+        class ExplodingMarkItDown:
+            def convert(self, path):
+                raise AssertionError("MarkItDown must NOT be called for plain-text files")
+
+        out = convert_file(str(f), markitdown=ExplodingMarkItDown(), auto_bijoy=False)
+        assert "plaintext" in out["steps"]
+        assert "# Notes" in out["text"]

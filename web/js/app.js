@@ -229,8 +229,9 @@ const STEP_LABEL = {
   pdf_empty: "No text in PDF", image_ocr_disabled: "OCR disabled",
   rtf: "RTF extract",
   xlsx_direct: "Excel (direct read)", xlsx_empty: "No text in spreadsheet",
+  plaintext: "Plain text", plaintext_empty: "No text",
 };
-const EMPTY_STEPS = new Set(["ocr_empty", "doc_empty", "pdf_empty", "image_ocr_disabled", "xlsx_empty"]);
+const EMPTY_STEPS = new Set(["ocr_empty", "doc_empty", "pdf_empty", "image_ocr_disabled", "xlsx_empty", "plaintext_empty"]);
 const STAT_ICON = {
   pending: "ti-circle", doing: "ti-loader-2",
   done: "ti-circle-check", warn: "ti-alert-triangle", error: "ti-alert-circle",

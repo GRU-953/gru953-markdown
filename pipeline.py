@@ -28,6 +28,13 @@ PDF_EXT = ".pdf"
 DOC_EXT = ".doc"
 RTF_EXT = ".rtf"
 XLSX_EXT = {".xlsx"}
+# Formats where direct UTF-8/cp1252 read is sufficient — no MarkItDown/ONNX needed.
+# Avoids loading the 400 MB magika model for trivial text files.
+PLAIN_TEXT_EXTS = {
+    ".txt", ".md",
+    ".ini", ".cfg", ".conf", ".log",
+    ".csv", ".tsv",
+}
 # Formats that contain no text — return a friendly error instead of a cryptic one
 UNSUPPORTED_EXTS = {
     ".eps", ".ai",          # PostScript / Illustrator vector
@@ -204,6 +211,22 @@ def _extract_xlsx_direct(path: str) -> str:
         return ""
 
 
+def is_plain_text(path) -> bool:
+    """Return True if *path* can be decoded as plain text without MarkItDown/ONNX."""
+    return Path(path).suffix.lower() in PLAIN_TEXT_EXTS
+
+
+def _read_plain_text(path: str) -> str:
+    """Decode a plain-text file trying common encodings in order."""
+    p = Path(path)
+    for enc in ("utf-8", "utf-8-sig", "cp1252", "latin-1"):
+        try:
+            return p.read_text(encoding=enc)
+        except (UnicodeDecodeError, LookupError):
+            continue
+    return p.read_bytes().decode("utf-8", errors="replace")
+
+
 def is_unsupported(path) -> bool:
     """Return True if *path* has an extension that can never yield text."""
     return Path(path).suffix.lower() in UNSUPPORTED_EXTS
@@ -333,6 +356,13 @@ def convert_file(
             steps.append("xlsx_direct")
         if not text.strip():
             steps.append("xlsx_empty")
+    elif is_plain_text(p):
+        # Read directly — no MarkItDown, no ONNX, saves ~400 MB RAM per call.
+        # Covers .txt, .md, .ini, .cfg, .conf, .log, .csv, .tsv.
+        text = _read_plain_text(str(p))
+        steps.append("plaintext")
+        if not text.strip():
+            steps.append("plaintext_empty")
     else:
         md = markitdown or _get_markitdown()
         try:
