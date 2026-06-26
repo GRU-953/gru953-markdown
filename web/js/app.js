@@ -372,7 +372,7 @@ function renderFiles() {
       `<div class="ficon"><i class="ti ${f.is_image ? "ti-photo" : "ti-file-text"}"></i></div>
        <div class="fmeta"><div class="fname">${esc(f.name)}</div>
          <div class="fsteps">${esc(steps)}</div>
-         ${f.status === "doing" ? '<div class="progress-track" role="progressbar"><div class="progress-bar" style="width:65%"></div></div>' : ""}
+         ${f.status === "doing" ? '<div class="progress-track" role="progressbar" aria-label="Converting"><div class="progress-bar indeterminate"></div></div>' : ""}
        </div>
        <i class="ti ${STAT_ICON[f.status]} fstat ${f.status}" aria-hidden="true"></i>
        <button class="fx" data-x="${i}" aria-label="${esc(t('convert.removeFile'))}"><i class="ti ti-x"></i></button>`;

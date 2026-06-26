@@ -4,6 +4,15 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.4] — 2026-06-26
+
+### Improved — indeterminate progress bar animation
+- Conversion rows now show a continuously animated shimmer bar while a file is being converted, replacing the previous static bar frozen at 65%. The existing `@keyframes shimmer` (already used by skeleton loaders) is reused — no new animation asset needed.
+- Guarded by `@media (prefers-reduced-motion: reduce)`: the animation is suppressed and users with that preference see a full-width static bar instead.
+- Added `aria-label="Converting"` to the `progressbar` role element for screen-reader clarity.
+
+---
+
 ## [v4.10.3] — 2026-06-26
 
 ### Fixed — onboarding text accuracy
