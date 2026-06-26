@@ -5,6 +5,7 @@ let cfg = { theme: "System", palette: "indigo", language: "en",
             ocr_language: "English", auto_ocr: true, auto_bijoy: true,
             use_windows_colors: false };
 let platform = "windows"; // updated during start(); defaults to windows for safety
+let isLowEnd = false;     // set during start(); suppresses expensive animations
 let files = [];          // {path, name, is_image, status, text, steps, error}
 let selected = -1;
 let outMode = "preview"; // preview | edit
@@ -63,12 +64,16 @@ function boot() {
   start();
 }
 async function start() {
-  const [cfgRes, locRes, platRes] = await Promise.allSettled([
-    api().get_config(), api().get_locales(), api().get_platform(),
+  const [cfgRes, locRes, platRes, sysRes] = await Promise.allSettled([
+    api().get_config(), api().get_locales(), api().get_platform(), api().get_system_info(),
   ]);
   if (cfgRes.status === "fulfilled") cfg = Object.assign(cfg, cfgRes.value);
   LOCALES = locRes.status === "fulfilled" ? locRes.value : {};
   if (platRes.status === "fulfilled") platform = platRes.value;
+  if (sysRes.status === "fulfilled" && sysRes.value.is_low_end) {
+    isLowEnd = true;
+    document.documentElement.setAttribute("data-perf", "low");
+  }
   lang = (cfg.language === "bn") ? "bn" : "en";
   applyTheme(); applyPalette(); applyPlatform();
   wireNav(); wireMode(); wireLang(); wirePalette(); wireConvert(); wireBijoy();

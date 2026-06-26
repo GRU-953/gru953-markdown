@@ -613,3 +613,15 @@ html[data-lang="bn"] body { font-family: var(--font-bn); }
 /* Utility entrance class used by JS. */
 .fade-in { animation: fadeIn var(--dur-std) var(--ease); }
 @media (prefers-reduced-motion: reduce) { .fade-in { animation: none; } }
+
+/* Low-end hardware mode (data-perf="low" set by JS via get_system_info).
+   Suppress animation-heavy rules so single-core / integrated-GPU devices
+   don't drop frames. Transitions (< 200ms) are kept because they are
+   GPU-composited and cheap even on integrated graphics. */
+:root[data-perf="low"] .skeleton,
+:root[data-perf="low"] .spinner,
+:root[data-perf="low"] .progress-bar.indeterminate,
+:root[data-perf="low"] .fade-in,
+:root[data-perf="low"] .toast,
+:root[data-perf="low"] .onboard-backdrop,
+:root[data-perf="low"] .view.active { animation: none; }

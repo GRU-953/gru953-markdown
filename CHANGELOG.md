@@ -4,6 +4,15 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.8] — 2026-06-26
+
+### Improved — adaptive animation for low-end hardware
+- On startup, the app now calls `get_system_info()` alongside the other startup API calls. If the machine reports 2 or fewer CPU cores (`is_low_end: true`), `data-perf="low"` is set on the root element and CSS animations (shimmer, skeleton, view transitions, toasts) are suppressed. CSS transitions under 200 ms are kept because they are GPU-composited and cheap even on integrated graphics.
+- The API call fires in parallel with the existing config/locales/platform calls so there is no additional startup latency.
+- This specifically targets the stated minimum-spec target: single-core 1 GHz with integrated GPU.
+
+---
+
 ## [v4.10.7] — 2026-06-26
 
 ### Improved — faster app startup
