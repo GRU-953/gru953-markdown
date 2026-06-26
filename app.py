@@ -36,7 +36,7 @@ from bijoy_unicode import convert_bijoy_to_unicode, detect_script
 from ocr_engine import ocr_image, ocr_pdf, tesseract_available, pymupdf_available
 from pipeline import convert_file, is_image, is_pdf, is_legacy_doc
 
-APP_VERSION = "v4.8.1"
+APP_VERSION = "v4.8.2"
 MAX_FILE_BYTES = 200 * 1024 * 1024  # 200 MB hard limit
 _RELEASES_API = "https://api.github.com/repos/GRU-953/gru953-markdown/releases/latest"
 
@@ -119,10 +119,13 @@ class Api:
             "*.json;*.xml;*.zip;*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.tif;*.tiff;*.webp;*.wav;*.mp3)",
             "All files (*.*)",
         )
-        result = self._window.create_file_dialog(
-            webview.FileDialog.OPEN, allow_multiple=True, file_types=types,
-            **self._dialog_dir(),
-        )
+        try:
+            result = self._window.create_file_dialog(
+                webview.FileDialog.OPEN, allow_multiple=True, file_types=types,
+                **self._dialog_dir(),
+            )
+        except Exception:
+            result = None
         if result:
             folder = str(Path(result[0]).parent)
             self._cfg["last_input_folder"] = folder
@@ -130,15 +133,18 @@ class Api:
         return [self._meta(p) for p in (result or [])]
 
     def _dialog_dir(self) -> dict:
-        """Return a {directory: ...} kwarg only when a real saved folder exists.
+        """Return a {directory: ...} kwarg with the best available starting folder.
 
-        Passing an empty string for ``directory`` can make the WebView2 file
-        dialog fail to open in the bundled app, so we omit it entirely until a
-        valid last-used folder has been recorded.
+        WebView2's file dialog silently fails (or raises) when ``directory`` is
+        absent or an empty string on some Windows configurations, so we always
+        resolve a real path: saved last-used folder → Documents → home dir.
         """
         init_dir = self._cfg.get("last_input_folder") or ""
         if init_dir and Path(init_dir).is_dir():
             return {"directory": init_dir}
+        for fallback in (Path.home() / "Documents", Path.home()):
+            if fallback.is_dir():
+                return {"directory": str(fallback)}
         return {}
 
     def pick_image(self) -> dict:
@@ -157,10 +163,13 @@ class Api:
             "Images & PDFs (*.png;*.jpg;*.jpeg;*.bmp;*.tiff;*.gif;*.webp;*.pdf)",
             "All files (*.*)",
         )
-        result = self._window.create_file_dialog(
-            webview.FileDialog.OPEN, allow_multiple=False, file_types=types,
-            **self._dialog_dir(),
-        )
+        try:
+            result = self._window.create_file_dialog(
+                webview.FileDialog.OPEN, allow_multiple=False, file_types=types,
+                **self._dialog_dir(),
+            )
+        except Exception:
+            return {}
         if result:
             folder = str(Path(result[0]).parent)
             self._cfg["last_input_folder"] = folder
@@ -324,27 +333,23 @@ class Api:
             return {"latest": APP_VERSION, "url": "", "installer": "",
                     "has_update": False}
 
-    def install_update(self, asset_url: str) -> dict:
-        """Download the installer to a temp file and launch it.
+    def install_update(self, download_url: str) -> dict:
+        """Open the download URL in the user's default browser.
 
-        On success the frontend should tell the user and call ``quit_app()`` so the
-        installer can replace the running app. Only https github.com /
-        *.githubusercontent.com asset URLs are accepted.
+        Downloading a file to temp and executing it with os.startfile() is a
+        pattern Windows Defender treats as potentially malicious.  Instead we
+        hand the URL to the browser and let the user run the installer manually.
+        Only https github.com / *.githubusercontent.com URLs are accepted.
         """
         try:
-            if not asset_url or not asset_url.lower().startswith("https://"):
-                return {"ok": False, "error": "No valid installer URL."}
-            import urllib.parse, tempfile, shutil
-            _host = urllib.parse.urlparse(asset_url).netloc.lower()
+            if not download_url or not download_url.lower().startswith("https://"):
+                return {"ok": False, "error": "No valid URL."}
+            import urllib.parse, webbrowser
+            _host = urllib.parse.urlparse(download_url).netloc.lower()
             if _host != "github.com" and not _host.endswith(".githubusercontent.com"):
-                return {"ok": False, "error": "Installer URL must be from github.com or githubusercontent.com."}
-            dest = Path(tempfile.gettempdir()) / "GRU953Markdown-Setup.exe"
-            req = urllib.request.Request(
-                asset_url, headers={"User-Agent": f"GRU953Markdown/{APP_VERSION}"})
-            with urllib.request.urlopen(req, timeout=120) as resp, open(dest, "wb") as f:
-                shutil.copyfileobj(resp, f)
-            os.startfile(str(dest))   # launch installer (Windows)
-            return {"ok": True, "path": str(dest)}
+                return {"ok": False, "error": "URL must be from github.com or githubusercontent.com."}
+            webbrowser.open(download_url)
+            return {"ok": True}
         except Exception as exc:
             return {"ok": False, "error": str(exc)}
 

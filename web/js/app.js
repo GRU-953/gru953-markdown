@@ -10,7 +10,8 @@ let ocrName = "";
 let outMode = "preview"; // preview | edit
 let LOCALES = {};        // { en: {...}, bn: {...} }
 let lang = "en";         // active UI language
-let _updateInfo = null;  // cached update info for banner re-render on lang switch
+let _updateInfo = null;       // cached update info for banner re-render on lang switch
+let _ocrPickerBusy = false;  // guard: prevent rapid-click flooding from scan picker
 const $ = (id) => document.getElementById(id);
 const api = () => window.pywebview.api;
 
@@ -101,14 +102,11 @@ function renderUpdateBanner() {
   const info = _updateInfo;
   $("update-msg").textContent = t("update.available", { version: info.latest });
   const link = $("update-link");
-  link.href = info.url || "#";
-  if (info.installer) {
-    link.textContent = t("update.install");
-    link.onclick = (e) => { e.preventDefault(); doUpdate(info.installer, info.url); };
-  } else {
-    link.textContent = t("update.download");
-    link.onclick = (e) => { e.preventDefault(); if (info.url) window.open(info.url); };
-  }
+  // Always open in browser — prefer installer asset, fall back to release page.
+  const dlUrl = info.installer || info.url;
+  link.href = dlUrl || "#";
+  link.textContent = t("update.download");
+  link.onclick = (e) => { e.preventDefault(); doUpdate(dlUrl, info.url); };
 }
 async function checkForUpdate() {
   try {
@@ -119,18 +117,13 @@ async function checkForUpdate() {
     $("update-banner").style.display = "flex";
   } catch (e) {}
 }
-async function doUpdate(installerUrl, pageUrl) {
+async function doUpdate(downloadUrl, pageUrl) {
   const msg = $("update-msg");
   msg.textContent = t("update.downloading");
   try {
-    const res = await api().install_update(installerUrl);
-    if (res && res.ok) {
-      msg.textContent = t("update.starting");
-      setTimeout(() => { try { api().quit_app(); } catch (e) {} }, 1500);
-    } else {
-      msg.textContent = t("update.failed");
-      if (pageUrl) setTimeout(() => window.open(pageUrl), 800);
-    }
+    const res = await api().install_update(downloadUrl || pageUrl);
+    msg.textContent = (res && res.ok) ? t("update.starting") : t("update.failed");
+    if (res && !res.ok && pageUrl) setTimeout(() => window.open(pageUrl), 800);
   } catch (e) {
     msg.textContent = t("update.failed");
     if (pageUrl) setTimeout(() => window.open(pageUrl), 800);
@@ -440,8 +433,11 @@ function wireOcr() {
   $("ocr-export").addEventListener("click", () => saveText($("ocr-out").value, "scanned.txt"));
 }
 async function pickOcr() {
+  if (_ocrPickerBusy) return;
+  _ocrPickerBusy = true;
   try { const m = await api().pick_scan_file(); if (m && m.path) setOcr(m); }
   catch (e) { toast(t("toast.pickerFailed"), "err"); }
+  finally { _ocrPickerBusy = false; }
 }
 function setOcr(m) {
   ocrPath = m.path; ocrName = m.name;

@@ -56,7 +56,7 @@ html[data-lang="bn"] body { font-family: var(--font-bn); }
 [data-mode="dark"] .brand-logo.logo-dark { display: block; }
 
 .nav-btn {
-  width: 48px; height: 48px; flex-shrink: 0;
+  width: 60px; height: 52px; flex-shrink: 0;
   border: none; background: transparent; color: var(--text-muted);
   border-radius: var(--radius-md);
   display: flex; flex-direction: column; align-items: center; justify-content: center;

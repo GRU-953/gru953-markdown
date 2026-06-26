@@ -20,6 +20,7 @@ _DEFAULTS: dict = {
     "ocr_language": "English",
     "auto_ocr": True,
     "auto_bijoy": True,
+    "last_input_folder": "",
     "last_output_folder": "",
     "recent_files": [],
     "history": [],              # list of {name, path, ts, steps, ok}
