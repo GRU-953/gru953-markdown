@@ -4,6 +4,23 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.46] — 2026-06-27
+
+### Tests — `_setup_tesseract` win32 paths and `ocr_pdf` multi-page (237 total, up from 232)
+
+Closed 5 remaining branches in `ocr_engine.py`:
+
+**`TestSetupTesseractBundle` (3 new tests — win32 non-bundle paths):**
+- `test_win32_system_exe_exists_sets_cmd`: no MEIPASS + `Path.exists` → True → `tesseract_cmd` updated to system path
+- `test_win32_system_exe_not_found_leaves_cmd_unchanged`: no MEIPASS + `Path.exists` → False → cmd unchanged
+- `test_win32_system_data_exists_sets_tessdata_prefix`: no MEIPASS + tessdata dir found → `TESSDATA_PREFIX` set via `os.environ.setdefault`
+
+**`TestOcrPdf` (2 new tests):**
+- `test_multi_page_success_joined_by_double_newline`: 2 pages both succeed → text joined with `\n\n`
+- `test_unknown_language_uses_eng_fallback`: unrecognised language → `LANG_CODES.get(lang, "eng")` default → `"eng"` passed to pytesseract
+
+---
+
 ## [v4.10.45] — 2026-06-27
 
 ### Tests — font-detection empty-parts guards and .doc/.ott path coverage (232 total, up from 225)

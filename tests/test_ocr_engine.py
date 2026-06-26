@@ -83,6 +83,31 @@ class TestSetupTesseractBundle:
             _setup_tesseract()
             assert pytesseract.pytesseract.tesseract_cmd == orig_cmd
 
+    def test_win32_system_exe_exists_sets_cmd(self, monkeypatch):
+        """On win32 without MEIPASS, if system Tesseract exe found, tesseract_cmd updated."""
+        monkeypatch.setattr(pytesseract.pytesseract, "tesseract_cmd", "sentinel_cmd")
+        with unittest.mock.patch("sys.platform", "win32"), \
+             unittest.mock.patch.object(Path, "exists", return_value=True):
+            _setup_tesseract()
+        assert r"Tesseract-OCR" in pytesseract.pytesseract.tesseract_cmd
+
+    def test_win32_system_exe_not_found_leaves_cmd_unchanged(self, monkeypatch):
+        """On win32 without MEIPASS, if system exe absent, cmd is unchanged."""
+        monkeypatch.setattr(pytesseract.pytesseract, "tesseract_cmd", "sentinel_cmd")
+        with unittest.mock.patch("sys.platform", "win32"), \
+             unittest.mock.patch.object(Path, "exists", return_value=False):
+            _setup_tesseract()
+        assert pytesseract.pytesseract.tesseract_cmd == "sentinel_cmd"
+
+    def test_win32_system_data_exists_sets_tessdata_prefix(self, monkeypatch):
+        """On win32 without MEIPASS, if tessdata dir found, TESSDATA_PREFIX is set."""
+        import os
+        monkeypatch.delenv("TESSDATA_PREFIX", raising=False)
+        with unittest.mock.patch("sys.platform", "win32"), \
+             unittest.mock.patch.object(Path, "exists", return_value=True):
+            _setup_tesseract()
+        assert "TESSDATA_PREFIX" in os.environ
+
 
 # ── ocr_image (mocked pytesseract) ───────────────────────────────────────────
 
@@ -206,3 +231,48 @@ class TestOcrPdf:
                                   side_effect=pytesseract.TesseractNotFoundError):
             with pytest.raises(RuntimeError, match="Tesseract not found"):
                 ocr_pdf(str(f))
+
+    def _make_page(self):
+        """Return a mock page whose get_pixmap returns a 1×1 RGB pixmap."""
+        mock_pix = unittest.mock.MagicMock()
+        mock_pix.width = 1
+        mock_pix.height = 1
+        mock_pix.samples = b"\x00\x00\x00"
+        mock_page = unittest.mock.MagicMock()
+        mock_page.get_pixmap.return_value = mock_pix
+        return mock_page
+
+    def test_multi_page_success_joined_by_double_newline(self, tmp_path):
+        """Two successful pages → text joined with '\\n\\n'."""
+        f = tmp_path / "doc.pdf"
+        f.write_bytes(b"dummy")
+        page1 = self._make_page()
+        page2 = self._make_page()
+        mock_doc = unittest.mock.MagicMock()
+        mock_doc.__iter__ = unittest.mock.MagicMock(
+            side_effect=lambda: iter([page1, page2])
+        )
+        fake_pymupdf = unittest.mock.MagicMock()
+        fake_pymupdf.open.return_value = mock_doc
+        call_count = [0]
+        def _fake_ocr(img, lang):
+            call_count[0] += 1
+            return f"page {call_count[0]} text"
+        with unittest.mock.patch.dict(sys.modules, {"pymupdf": fake_pymupdf}), \
+             unittest.mock.patch("pytesseract.image_to_string", side_effect=_fake_ocr):
+            result = ocr_pdf(str(f))
+        assert result == "page 1 text\n\npage 2 text"
+
+    def test_unknown_language_uses_eng_fallback(self, tmp_path):
+        """Unrecognised language name → LANG_CODES.get default → 'eng'."""
+        f = tmp_path / "doc.pdf"
+        f.write_bytes(b"dummy")
+        fake_pymupdf, _, _ = self._make_mock_doc()
+        captured = []
+        def _fake_ocr(img, lang):
+            captured.append(lang)
+            return "text"
+        with unittest.mock.patch.dict(sys.modules, {"pymupdf": fake_pymupdf}), \
+             unittest.mock.patch("pytesseract.image_to_string", side_effect=_fake_ocr):
+            ocr_pdf(str(f), language="Unknown")
+        assert captured == ["eng"]
