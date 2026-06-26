@@ -108,6 +108,24 @@ class TestSetupTesseractBundle:
             _setup_tesseract()
         assert "TESSDATA_PREFIX" in os.environ
 
+    def test_bundle_tessdata_not_found_leaves_prefix_unset(self, monkeypatch):
+        """Bundle path: exe found (cmd updated) but tessdata dir absent → TESSDATA_PREFIX not set."""
+        import os
+        monkeypatch.delenv("TESSDATA_PREFIX", raising=False)
+        with unittest.mock.patch.object(sys, "_MEIPASS", "/fake/bundle", create=True), \
+             unittest.mock.patch.object(Path, "exists", side_effect=[True, False]):
+            _setup_tesseract()
+        assert "TESSDATA_PREFIX" not in os.environ
+
+    def test_win32_system_data_not_found_leaves_prefix_unset(self, monkeypatch):
+        """Win32: system Tesseract exe found but tessdata dir absent → TESSDATA_PREFIX not set."""
+        import os
+        monkeypatch.delenv("TESSDATA_PREFIX", raising=False)
+        with unittest.mock.patch("sys.platform", "win32"), \
+             unittest.mock.patch.object(Path, "exists", side_effect=[True, False]):
+            _setup_tesseract()
+        assert "TESSDATA_PREFIX" not in os.environ
+
 
 # ── ocr_image (mocked pytesseract) ───────────────────────────────────────────
 

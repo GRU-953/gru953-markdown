@@ -4,6 +4,15 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.54] — 2026-06-27
+
+### Tests — _setup_tesseract tessdata-absent branches (261 total, up from 259)
+
+- `TestSetupTesseractBundle.test_bundle_tessdata_not_found_leaves_prefix_unset`: PyInstaller bundle with exe found but tessdata directory absent — TESSDATA_PREFIX is not set; uses `side_effect=[True, False]` to return different values per .exists() call
+- `TestSetupTesseractBundle.test_win32_system_data_not_found_leaves_prefix_unset`: Win32 non-bundle with system exe found but tessdata directory absent — TESSDATA_PREFIX not set; same side_effect pattern
+
+---
+
 ## [v4.10.53] — 2026-06-27
 
 ### Tests — legacy-doc printable-ratio guard + whitespace normalization (259 total, up from 256)
