@@ -40,7 +40,7 @@ def _touch(tmp_path, name):
 # ── is_image ──────────────────────────────────────────────────────────────────
 
 class TestIsImage:
-    @pytest.mark.parametrize("name", ["a.png", "b.JPG", "c.jpeg", "d.tiff", "e.webp", "f.bmp"])
+    @pytest.mark.parametrize("name", ["a.png", "b.JPG", "c.jpeg", "d.tiff", "e.webp", "f.bmp", "g.gif", "h.tif"])
     def test_image_extensions(self, name):
         assert is_image(name) is True
 
@@ -229,6 +229,23 @@ class TestBijoyStep:
             bijoy_func=lambda t: t,
         )
         assert not detection_called  # _rtf_raw == '' → 'if _rtf_raw:' is False → skipped
+
+    def test_xlsm_extension_triggers_xlsx_font_detection(self, tmp_path, monkeypatch):
+        """.xlsm is in _XLSX_EXTS so _xlsx_font_has_bijoy is called even though
+        is_xlsx() returns False (.xlsm goes through the generic MarkItDown else-branch)."""
+        f = _touch(tmp_path, "macro.xlsm")
+        detection_called = []
+        monkeypatch.setattr(pipeline, "_xlsx_font_has_bijoy",
+                            lambda p: detection_called.append(p) or False)
+        convert_file(
+            str(f),
+            markitdown=FakeMarkItDown("evsjv"),
+            auto_bijoy=True,
+            is_bijoy_func=lambda t: False,
+            bijoy_func=lambda t: t,
+        )
+        assert detection_called            # .xlsm in _XLSX_EXTS → font detection called
+        assert detection_called[0] == str(f)
 
 
 # ── errors / lazy markitdown ──────────────────────────────────────────────────
@@ -506,6 +523,7 @@ class TestXlsx:
     def test_is_xlsx_false(self):
         assert is_xlsx("data.xls") is False
         assert is_xlsx("data.docx") is False
+        assert is_xlsx("data.xlsm") is False  # .xlsm uses generic MarkItDown branch
 
     def test_xlsx_uses_markitdown_when_it_works(self, tmp_path):
         f = tmp_path / "data.xlsx"
@@ -733,6 +751,23 @@ class TestExtractXlsxDirect:
         result = _extract_xlsx_direct(str(f))
         assert "## Sales" in result
         assert "## Costs" in result
+
+    def test_two_sheets_one_empty_still_gets_heading(self, tmp_path, monkeypatch):
+        """2-sheet workbook where one sheet is empty: len(wb.worksheets) > 1 is still True,
+        so the non-empty sheet gets an H2 heading even though the empty sheet was skipped."""
+        import sys
+        sheets = [
+            self._make_sheet("Blank", [("", ""), (None,)]),
+            self._make_sheet("Data", [("X", "Y"), ("1", "2")]),
+        ]
+        fake_mod = self._make_fake_openpyxl(sheets)
+        monkeypatch.setitem(sys.modules, "openpyxl", fake_mod)
+        f = tmp_path / "partial.xlsx"
+        f.write_bytes(b"dummy")
+        result = _extract_xlsx_direct(str(f))
+        assert "## Data" in result       # heading present for non-empty sheet
+        assert "## Blank" not in result  # blank sheet contributed no heading
+        assert "| X | Y |" in result
 
     def test_pipe_chars_escaped(self, tmp_path, monkeypatch):
         """Pipe characters inside cell values must be escaped as \\|."""
@@ -1184,6 +1219,14 @@ class TestDocxFontDetection:
         bad = tmp_path / "bad.docx"
         bad.write_bytes(b"not a zip file at all")
         assert _docx_font_has_bijoy(str(bad)) is False
+
+    def test_docx_no_xml_parts_returns_false(self, tmp_path):
+        """Valid ZIP with neither word/document.xml nor word/styles.xml → parts=[] → False."""
+        import zipfile
+        docx_path = tmp_path / "no_xml.docx"
+        with zipfile.ZipFile(str(docx_path), "w") as z:
+            z.writestr("_rels/.rels", "<Relationships/>")
+        assert _docx_font_has_bijoy(str(docx_path)) is False
 
     def test_font_detection_triggers_bijoy_conversion(self, tmp_path, monkeypatch):
         """ASCII-only Bijoy text + SutonnyMJ font → bijoy step even when text-scan fails."""

@@ -4,6 +4,20 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.66] — 2026-06-27
+
+### Tests — dispatch and font-detection gaps closed (326 total, up from 321)
+
+Six new tests targeting previously uncovered branches:
+
+- `TestIsImage` (2): `.gif` and `.tif` extensions now in the parametrize list
+- `TestXlsx` (1): `is_xlsx("data.xlsm")` explicitly asserts False, documenting that `.xlsm` routes through the generic MarkItDown else-branch
+- `TestExtractXlsxDirect` (1): 2-sheet workbook with one blank sheet — the non-empty sheet still receives an H2 heading because `len(wb.worksheets) > 1` checks the total workbook, not the count of processed sheets
+- `TestBijoyStep` (1): `.xlsm` extension triggers `_xlsx_font_has_bijoy` via `_XLSX_EXTS = (".xlsx", ".xlsm")` even though `is_xlsx` returns False for `.xlsm`
+- `TestDocxFontDetection` (1): valid DOCX ZIP with neither `word/document.xml` nor `word/styles.xml` → `parts=[]` → `return False` (the `if not parts` guard, mirroring the equivalent ODT and PPTX tests)
+
+---
+
 ## [v4.10.65] — 2026-06-27
 
 ### Tests — boundary coverage: detect_script thresholds, reph/OLE edge cases, RTF guard (321 total, up from 312)
