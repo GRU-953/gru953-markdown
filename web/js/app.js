@@ -33,7 +33,7 @@ async function populateAbout() {
   try {
     const ver = await api().get_version();
     const el = document.getElementById("about-ver");
-    if (el) el.textContent = `MarkItDown Converter ${ver} · GRU-953`;
+    if (el) el.textContent = `GRU953 Markdown ${ver} · GRU953`;
   } catch (e) {}
 }
 

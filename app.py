@@ -1,5 +1,5 @@
 """
-MarkItDown Converter — GRU-953
+GRU953 Markdown — GRU953
 pywebview desktop app: Python backend + HTML/CSS/JS frontend (WebView2).
 
 This module owns the window and the Api bridge exposed to JavaScript as
