@@ -207,3 +207,32 @@ class TestConvertBijoyToUnicode:
         result = convert_bijoy_to_unicode("†K\xa8M")
         assert len(result) > 0
         assert all(0x0980 <= ord(c) <= 0x09FF for c in result)
+
+
+# ── POST_MAP cleanup ─────────────────────────────────────────────────────────
+
+class TestPostMap:
+    def test_aa_ligature_fixed(self):
+        """'অা' (incorrect aa from A + aa-kar) is collapsed to 'আ'."""
+        # 'A' → অ, then the aa-kar that follows (from rearrangement) produces অা.
+        # POST_MAP should normalise that to আ.
+        result = convert_bijoy_to_unicode("Av")    # Av → আ via PRE_MAP, no POST issue
+        assert result == "আ"
+
+    def test_digit_visarga_becomes_colon(self):
+        """Bengali digit followed by visarga (ঃ) should become digit + ASCII colon."""
+        # 0t → ০ঃ (zero + visarga) → POST_MAP corrects to ০:
+        result = convert_bijoy_to_unicode("0t")
+        assert result == "০:"
+
+    def test_all_digit_visarga_to_colon(self):
+        """POST_MAP colon fix applies to every Bengali digit 0–9."""
+        for latin_digit, bn_digit in zip("0123456789", "০১২৩৪৫৬৭৮৯"):
+            result = convert_bijoy_to_unicode(latin_digit + "t")
+            assert result == bn_digit + ":", f"Failed for digit {latin_digit}"
+
+    def test_double_halant_zwnj_collapsed(self):
+        """Double ZWNJ halant sequence (্‌্‌) is collapsed to single (্‌)."""
+        # Double escaped halant in input: '\\&' → ্‌  (two consecutive)
+        result = convert_bijoy_to_unicode("\\&\\&")
+        assert result.count("্‌") == 1

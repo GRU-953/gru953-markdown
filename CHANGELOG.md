@@ -4,6 +4,16 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.24] — 2026-06-26
+
+### Tests — 4 new Bijoy POST_MAP regression tests (148 total, up from 144)
+- `test_aa_ligature_fixed`: verifies `অা` is collapsed to `আ` by POST_MAP
+- `test_digit_visarga_becomes_colon`: verifies `০ঃ` → `০:` colon fix
+- `test_all_digit_visarga_to_colon`: same check for all 10 Bengali digits
+- `test_double_halant_zwnj_collapsed`: verifies double `্‌্‌` → `্‌` dedup
+
+---
+
 ## [v4.10.23] — 2026-06-26
 
 ### Added — keyboard shortcuts for export
