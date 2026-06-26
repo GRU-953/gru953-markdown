@@ -34,7 +34,7 @@
           <use href="#bird" x="12" y="12" width="40" height="40" fill="#F4B53C"/>
         </svg>
       </div>
-      <button class="nav-btn active" data-view="convert" data-i18n-title="nav.convert.tip" title="Convert files"><i class="ti ti-transform"></i><span data-i18n="nav.convert">Convert</span></button>
+      <button class="nav-btn active" aria-current="page" data-view="convert" data-i18n-title="nav.convert.tip" title="Convert files"><i class="ti ti-transform"></i><span data-i18n="nav.convert">Convert</span></button>
       <button class="nav-btn" data-view="bijoy" data-i18n-title="nav.bijoy.tip" title="Convert old Bangla (Bijoy/SutonnyMJ) to Unicode"><i class="ti ti-language"></i><span data-i18n="nav.bijoy">Bangla</span></button>
       <button class="nav-btn" data-view="history" data-i18n-title="nav.history.tip" title="Conversion history"><i class="ti ti-history"></i><span data-i18n="nav.history">History</span></button>
       <div class="nav-spacer"></div>
@@ -80,7 +80,7 @@
                 <div class="empty" id="file-empty"><i class="ti ti-files-off" aria-hidden="true"></i><span data-i18n="convert.empty">No files yet</span></div>
               </div>
               <div class="panel-foot">
-                <button class="btn primary" id="convert-btn"><i class="ti ti-bolt"></i><span data-i18n="btn.convertAll">Convert all</span></button>
+                <button class="btn primary" id="convert-btn" aria-live="polite"><i class="ti ti-bolt"></i><span data-i18n="btn.convertAll">Convert all</span></button>
                 <button class="btn icon" id="clear-btn" data-i18n-title="btn.clear" title="Clear" aria-label="Clear"><i class="ti ti-trash"></i></button>
               </div>
             </div>

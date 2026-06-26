@@ -257,7 +257,11 @@ function wireNav() {
 }
 function switchView(v) {
   currentView = v;
-  document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.view === v));
+  document.querySelectorAll(".nav-btn").forEach(b => {
+    const on = b.dataset.view === v;
+    b.classList.toggle("active", on);
+    b.setAttribute("aria-current", on ? "page" : "false");
+  });
   document.querySelectorAll(".view").forEach(s => s.classList.remove("active"));
   const sec = $("view-" + v); sec.classList.add("active"); sec.classList.add("fade-in");
   setTimeout(() => sec.classList.remove("fade-in"), 300);
@@ -540,8 +544,10 @@ async function exportAll() {
   const fmt = await pickFormat();
   if (!fmt) return;
   const res = await api().export_combined(done.map(f => ({ name: f.name, text: f.text })), fmt);
-  if (res.ok) toast(t("toast.savedCombined", { format: fmt }), "ok");
-  else if (!res.cancelled) toast(res.error || t("toast.exportFailed"), "err");
+  if (res.ok) {
+    const segs = res.path.split(/[\\/]/);
+    toast(t("toast.saved", { name: segs.length > 1 ? segs.slice(-2).join("/") : segs[0] }), "ok");
+  } else if (!res.cancelled) toast(res.error || t("toast.exportFailed"), "err");
 }
 
 /* ── Bijoy view ───────────────────────────────────────────────────────────── */

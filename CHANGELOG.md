@@ -4,6 +4,19 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.15] — 2026-06-26
+
+### Improved — screen reader: active navigation view announced
+- The sidebar navigation buttons now carry `aria-current="page"` on the active item. Screen readers previously had no semantic signal that one of the four buttons represented the current view; they would read each button identically. The attribute is toggled by JavaScript whenever the view changes.
+
+### Improved — screen reader: batch conversion progress announced
+- The Convert button has `aria-live="polite"`, so its text content changes ("Converting 2 / 5…") are announced by screen readers as they happen without interrupting the current reading flow.
+
+### Improved — export-all toast shows save location
+- The confirmation toast after saving a combined export now shows the parent folder and filename (e.g. `Documents/combined.md`), matching the behaviour of single-file exports added in v4.10.13.
+
+---
+
 ## [v4.10.14] — 2026-06-26
 
 ### Improved — file list is now fully keyboard-navigable
