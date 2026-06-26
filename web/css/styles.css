@@ -597,7 +597,7 @@ html[data-lang="bn"] body { font-family: var(--font-bn); }
 
 /* ── Export-format modal (built in JS by pickFormat) ──────────────────────── */
 .modal-backdrop {
-  position: absolute; inset: 0; z-index: 60;
+  position: fixed; inset: 0; z-index: 60;
   background: var(--overlay); backdrop-filter: blur(2px);
   display: flex; align-items: center; justify-content: center;
 }

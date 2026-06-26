@@ -81,7 +81,7 @@ async function start() {
   lang = (cfg.language === "bn") ? "bn" : "en";
   applyTheme(); applyPalette(); applyPlatform();
   wireNav(); wireMode(); wireLang(); wirePalette(); wireConvert(); wireBijoy();
-  wireHistory(); wireSettings(); wireOffline();
+  wireHistory(); wireSettings(); wireOffline(); wireUpdateDismiss();
   syncSettingsControls();
   applyLang();
   renderFiles(); renderOutput();
@@ -184,6 +184,12 @@ function applyPlatform() {
   document.querySelectorAll(".win-only").forEach(el => {
     el.style.display = platform === "windows" ? "" : "none";
   });
+}
+
+/* ── Update banner ──────────────────────────────────────────────────────────── */
+function wireUpdateDismiss() {
+  const btn = $("update-dismiss");
+  if (btn) btn.addEventListener("click", () => { $("update-banner").style.display = "none"; });
 }
 
 /* ── Offline awareness ──────────────────────────────────────────────────────── */
@@ -689,8 +695,9 @@ async function pickFormat() {
     wrap.className = "modal-backdrop";
     wrap.setAttribute("role", "dialog");
     wrap.setAttribute("aria-modal", "true");
+    wrap.setAttribute("aria-labelledby", "export-modal-title");
     wrap.innerHTML = `<div class="modal-card">
-      <div class="modal-title">${esc(t("export.title"))}</div>
+      <div class="modal-title" id="export-modal-title">${esc(t("export.title"))}</div>
       <div class="row" style="gap:8px;">
         ${["md", "html", "txt"].map(f => `<button class="btn" data-f="${f}" style="flex:1;justify-content:center;">${f.toUpperCase()}</button>`).join("")}
       </div></div>`;

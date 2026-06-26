@@ -4,6 +4,22 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.10.22] — 2026-06-26
+
+### Fixed — export format modal covered by scrolled content
+- The export format picker (MD / HTML / TXT) used `position: absolute`, which positioned it relative to the nearest ancestor rather than the viewport. If the page content was scrolled, the modal could appear off-screen. Changed to `position: fixed` so it always centres in the visible window.
+
+### Fixed — update banner dismiss button wired in JavaScript
+- The "×" button on the update banner used an inline `onclick` HTML attribute to hide the banner. Inline event handlers bypass Content Security Policy in strict environments and are harder to test. The `onclick` has been removed and the handler is now registered in JavaScript via `wireUpdateDismiss()`.
+
+### Fixed — export format dialog announced to screen readers
+- The export modal had `role="dialog"` and `aria-modal="true"` but no `aria-labelledby`, so screen readers could not announce the dialog name when it opened. The title element now has `id="export-modal-title"` and the backdrop references it via `aria-labelledby`.
+
+### Fixed — Bijoy detect pill announced to screen readers
+- The script-detection pill in the Bijoy view changed text (e.g. "Bijoy detected", "Unicode") but had no live-region markup. Screen reader users would not hear the detection result without navigating to the element manually. The element now carries `role="status"` and `aria-live="polite"`.
+
+---
+
 ## [v4.10.21] — 2026-06-26
 
 ### Added — re-add file from History to the conversion queue

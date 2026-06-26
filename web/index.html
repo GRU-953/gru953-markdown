@@ -56,7 +56,7 @@
         <i class="ti ti-arrow-up-circle"></i>
         <span id="update-msg" data-i18n="update.message">A new version is available.</span>
         <a id="update-link" href="#" target="_blank" class="update-link">Download</a>
-        <button class="update-dismiss" data-i18n-title="update.dismiss" onclick="this.parentElement.style.display='none'" title="Dismiss" aria-label="Dismiss">×</button>
+        <button class="update-dismiss" id="update-dismiss" data-i18n-title="update.dismiss" title="Dismiss" aria-label="Dismiss">×</button>
       </div>
 
       <div class="content">
@@ -114,7 +114,7 @@
           <div class="stack">
             <div class="row">
               <span class="label" data-i18n="bijoy.inputLabel">Paste old Bangla text here (Bijoy / SutonnyMJ font)</span>
-              <span class="detect-pill" id="bj-detect" data-i18n="bijoy.detect.idle" style="margin-left:auto;">Paste text to detect</span>
+              <span class="detect-pill" id="bj-detect" role="status" aria-live="polite" data-i18n="bijoy.detect.idle" style="margin-left:auto;">Paste text to detect</span>
             </div>
             <textarea class="field" id="bj-in" data-i18n-ph="bijoy.input.placeholder" placeholder="Avwg evsjvq wjwL…  ← paste Bijoy-encoded text here"></textarea>
             <div class="row">
