@@ -9,10 +9,8 @@ This module owns the window and the Api bridge exposed to JavaScript as
 (pipeline, ocr_engine, bijoy_unicode, settings) so the bridge stays thin.
 """
 
-import os
 import sys
 import time
-import threading
 import urllib.request
 import json as _json
 from pathlib import Path
@@ -36,7 +34,7 @@ from bijoy_unicode import convert_bijoy_to_unicode, detect_script
 from ocr_engine import ocr_image, ocr_pdf, tesseract_available, pymupdf_available
 from pipeline import convert_file, is_image, is_pdf, is_legacy_doc
 
-APP_VERSION = "v4.8.2"
+APP_VERSION = "v4.8.3"
 MAX_FILE_BYTES = 200 * 1024 * 1024  # 200 MB hard limit
 _RELEASES_API = "https://api.github.com/repos/GRU-953/gru953-markdown/releases/latest"
 
@@ -145,16 +143,6 @@ class Api:
         for fallback in (Path.home() / "Documents", Path.home()):
             if fallback.is_dir():
                 return {"directory": str(fallback)}
-        return {}
-
-    def pick_image(self) -> dict:
-        types = ("Images (*.png;*.jpg;*.jpeg;*.bmp;*.tiff;*.gif;*.webp)",
-                 "All files (*.*)")
-        result = self._window.create_file_dialog(
-            webview.FileDialog.OPEN, allow_multiple=False, file_types=types
-        )
-        if result:
-            return self._meta(result[0])
         return {}
 
     def pick_scan_file(self) -> dict:
@@ -354,7 +342,7 @@ class Api:
             return {"ok": False, "error": str(exc)}
 
     def quit_app(self) -> None:
-        """Close the window so a launched installer can complete."""
+        """Close the main window (reserved for callers that need it)."""
         try:
             if self._window:
                 self._window.destroy()

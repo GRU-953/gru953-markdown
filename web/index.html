@@ -102,8 +102,8 @@
                 <h2 id="out-name" data-i18n="convert.output.title">Output</h2>
                 <div class="head-actions">
                   <div class="seg output-tabs" id="out-tabs" role="radiogroup" aria-label="Output view">
-                    <button data-tab="preview" class="active" role="radio" data-i18n="tab.preview">Preview</button>
-                    <button data-tab="edit" role="radio" data-i18n="tab.edit">Edit</button>
+                    <button data-tab="preview" class="active" role="radio" aria-checked="true" data-i18n="tab.preview">Preview</button>
+                    <button data-tab="edit" role="radio" aria-checked="false" data-i18n="tab.edit">Edit</button>
                   </div>
                 </div>
               </div>
@@ -131,9 +131,9 @@
             <div class="row">
               <span class="label" data-i18n="ocr.langLabel">Language in the file</span>
               <div class="seg" id="ocr-lang" role="radiogroup" aria-label="OCR language">
-                <button data-lang="English" class="active" role="radio" data-i18n="lang.english">English</button>
-                <button data-lang="বাংলা" role="radio" data-i18n="lang.bangla">বাংলা</button>
-                <button data-lang="Both" role="radio" data-i18n="lang.both">Both</button>
+                <button data-lang="English" class="active" role="radio" aria-checked="true" data-i18n="lang.english">English</button>
+                <button data-lang="বাংলা" role="radio" aria-checked="false" data-i18n="lang.bangla">বাংলা</button>
+                <button data-lang="Both" role="radio" aria-checked="false" data-i18n="lang.both">Both</button>
               </div>
               <label class="checkbox"><input type="checkbox" id="ocr-bijoy" checked> <span data-i18n="ocr.bijoyCheckbox">Convert old Bangla font → Unicode</span></label>
               <button class="btn primary" id="ocr-run" style="margin-left:auto;"><i class="ti ti-scan"></i><span data-i18n="ocr.run">Extract text</span></button>
@@ -208,9 +208,9 @@
               <h3 data-i18n="settings.ocrLang.title">Default OCR language</h3>
               <p data-i18n="settings.ocrLang.desc">Used by the unified Convert pipeline for images.</p>
               <div class="seg" id="set-ocr-lang" role="radiogroup" aria-label="Default OCR language">
-                <button data-lang="English" role="radio" data-i18n="lang.english">English</button>
-                <button data-lang="বাংলা" role="radio" data-i18n="lang.bangla">বাংলা</button>
-                <button data-lang="Both" role="radio" data-i18n="lang.both">Both</button>
+                <button data-lang="English" role="radio" aria-checked="false" data-i18n="lang.english">English</button>
+                <button data-lang="বাংলা" role="radio" aria-checked="false" data-i18n="lang.bangla">বাংলা</button>
+                <button data-lang="Both" role="radio" aria-checked="false" data-i18n="lang.both">Both</button>
               </div>
             </div>
             <div class="setting">

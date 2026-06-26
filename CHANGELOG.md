@@ -4,6 +4,46 @@ All notable changes to GRU953 Markdown are documented here.
 
 ---
 
+## [v4.8.3] — 2026-06-26
+
+### Fixed — accessibility
+- **`#out-tabs` missing `aria-checked`**: Preview / Edit tab buttons carry `role="radio"` but had no `aria-checked` in the HTML and `setOutMode()` never wrote it. Both initial markup and the JS toggle now set the attribute correctly.
+- **`#ocr-lang` missing initial `aria-checked`**: The OCR-language picker's English button started `active` in HTML but without `aria-checked="true"`. Added to the markup.
+- **`#set-ocr-lang` missing `aria-checked`**: `syncSettingsControls()` toggled the `active` class but never set `aria-checked`. Now sets both on every call.
+
+### Fixed — UX
+- **Export format modal Escape key**: pressing Escape now dismisses the format picker (MD / HTML / TXT). Previously only backdrop-click or a format button would close it.
+
+### Removed — dead code
+- `pick_image()` API bridge method — never called from the frontend; removed.
+- `import os` and `import threading` — unused after the v4.8.2 switch from `os.startfile()` to `webbrowser.open()`.
+
+---
+
+## [v4.8.2] — 2026-06-26
+
+### Fixed
+- **Scan picker toast flooding**: the Scan tab "click to browse" button could trigger a cascade of "Could not open file picker" toasts if clicked rapidly. Root causes were: (a) `_dialog_dir()` returned `{}` when no saved folder existed, causing WebView2 to fail silently or raise; (b) `pick_scan_file()` had no `try/except`, so any exception rejected the JS promise and the `catch` block showed a toast; (c) no click guard prevented rapid re-entry. All three are fixed: `_dialog_dir()` now always resolves a real path (last-used → Documents → home), both picker methods are wrapped in `try/except`, and a `_ocrPickerBusy` flag blocks re-entry while a dialog is open. Same guard applied to `pick_files()`.
+- **Windows Defender flagging the app**: the previous auto-update flow downloaded the installer exe to `%TEMP%` and launched it with `os.startfile()` — a textbook pattern Windows Defender flags as potentially malicious. Replaced with `webbrowser.open()`: the download URL is handed to the user's browser and the user runs the installer themselves. No silent execution from temp.
+- **Nav tab indicator too narrow**: nav button width widened from 48 px to 60 px so the tab label has clear breathing room inside the active indicator outline.
+
+---
+
+## [v4.8.1] — 2026-06-26
+
+### Fixed — from adversarial review
+- **Theme-adaptive logo**: the sidebar and onboarding logos now correctly swap between a Teal tile (light mode) and an Indigo tile with amber bird (dark mode). CSS `display` toggling via `[data-mode="dark"]` selectors, no JS needed.
+- **`aria-hidden` on visible dark logo**: both `.logo-dark` SVGs had `aria-hidden="true"` AND `role="img" aria-label` — contradictory attributes that caused screen readers to skip the visible logo in dark mode. Removed `aria-hidden="true"`.
+- **Mode-seg missing `aria-checked`**: the Light / Auto / Dark buttons had `role="radio"` but no `aria-checked` in the HTML. Added initial values matching the System default.
+- **Update banner text lost on language switch**: `applyI18n()` overwrote the dynamic "Update available: v4.x.x" text with the static `update.message` key. Fixed by caching update info in `_updateInfo` and calling `renderUpdateBanner()` after every `applyI18n()` run.
+- **`#update-link` text regression on language switch**: `data-i18n="update.download"` on the link caused `applyI18n()` to overwrite the JS-set text. Removed the `data-i18n` attribute; JS owns the link text entirely.
+- **`export_text()` empty-directory save dialog**: same WebView2 empty-string directory bug as the scan picker; the save dialog `_save_kw` dict now only includes `"directory"` when `last_output_folder` is a real existing path.
+- **`convert.removeFile` aria-label localised**: the per-file remove (×) button's `aria-label` was hardcoded English; now uses `t('convert.removeFile')`.
+- **Ctrl+O CapsLock interference**: the keyboard shortcut to add files now uses `e.key.toLowerCase() === "o"` so it fires regardless of CapsLock state.
+- **Settings persistence for `last_input_folder`**: added `"last_input_folder": ""` to `_DEFAULTS` in `settings.py` for consistent merging.
+
+---
+
 ## [v4.8.0] — 2026-06-26
 
 ### Added — bilingual interface

@@ -375,7 +375,11 @@ function setupRowDrag(row, i) {
 function currentText() { return selected >= 0 ? (files[selected].text || "") : ""; }
 function setOutMode(m) {
   outMode = m;
-  document.querySelectorAll("#out-tabs button").forEach(b => b.classList.toggle("active", b.dataset.tab === m));
+  document.querySelectorAll("#out-tabs button").forEach(b => {
+    const on = b.dataset.tab === m;
+    b.classList.toggle("active", on);
+    b.setAttribute("aria-checked", on ? "true" : "false");
+  });
   renderOutput();
 }
 function updateWordCount(text) {
@@ -521,8 +525,11 @@ function wireSettings() {
 function syncSettingsControls() {
   $("set-auto-ocr").checked = cfg.auto_ocr !== false;
   $("set-auto-bijoy").checked = cfg.auto_bijoy !== false;
-  document.querySelectorAll("#set-ocr-lang button").forEach(b =>
-    b.classList.toggle("active", b.dataset.lang === cfg.ocr_language));
+  document.querySelectorAll("#set-ocr-lang button").forEach(b => {
+    const on = b.dataset.lang === cfg.ocr_language;
+    b.classList.toggle("active", on);
+    b.setAttribute("aria-checked", on ? "true" : "false");
+  });
 }
 
 /* ── Shared helpers ───────────────────────────────────────────────────────── */
@@ -542,9 +549,12 @@ async function pickFormat() {
         ${["md", "html", "txt"].map(f => `<button class="btn" data-f="${f}" style="flex:1;justify-content:center;">${f.toUpperCase()}</button>`).join("")}
       </div></div>`;
     document.body.appendChild(wrap);
+    const dismiss = (val) => { resolve(val); wrap.remove(); document.removeEventListener("keydown", onKey); };
+    const onKey = (e) => { if (e.key === "Escape") dismiss(null); };
+    document.addEventListener("keydown", onKey);
     wrap.addEventListener("click", e => {
-      if (e.target.dataset.f) { resolve(e.target.dataset.f); wrap.remove(); }
-      else if (e.target === wrap) { resolve(null); wrap.remove(); }
+      if (e.target.dataset.f) dismiss(e.target.dataset.f);
+      else if (e.target === wrap) dismiss(null);
     });
   });
 }
